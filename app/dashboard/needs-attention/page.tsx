@@ -102,15 +102,15 @@ export default function NeedsAttentionPage() {
           ← All Institutions
         </Link>
       </div>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-gray-600 dark:text-gray-400">
         Institutions with no touchpoint in the last 30 days (stalled/cold). Draft a low-pressure
         re-engagement email per institution — review before sending, this only drafts.
       </p>
 
-      {error && <p className="text-sm text-red-700">{error}</p>}
-      {loading && <p className="text-sm text-gray-500">Loading…</p>}
+      {error && <p className="text-sm text-red-700 dark:text-red-400">{error}</p>}
+      {loading && <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>}
       {!loading && institutions.length === 0 && (
-        <p className="text-sm text-gray-500">Nothing stalled right now.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Nothing stalled right now.</p>
       )}
 
       <div className="flex flex-col gap-4">
@@ -118,11 +118,11 @@ export default function NeedsAttentionPage() {
           const draft = drafts[inst.id];
           const draftError = draftErrors[inst.id];
           return (
-            <div key={inst.id} className="rounded border p-4">
+            <div key={inst.id} className="rounded border border-gray-200 dark:border-gray-700 p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">{inst.name}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {inst.city}, {inst.country} · {inst.tier.replace(/_/g, ' ')} ·{' '}
                     {daysSince(inst.last_interaction_at) ?? '?'} days inactive
                   </p>
@@ -136,15 +136,15 @@ export default function NeedsAttentionPage() {
                 </button>
               </div>
 
-              {draftError && <p className="mt-2 text-sm text-red-700">{draftError}</p>}
+              {draftError && <p className="mt-2 text-sm text-red-700 dark:text-red-400">{draftError}</p>}
 
               {draft && (
-                <div className="mt-3 rounded bg-gray-50 p-3 text-sm">
+                <div className="mt-3 rounded bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-3 text-sm">
                   <p className="font-semibold">{draft.subject_line}</p>
                   <p className="mt-2 whitespace-pre-wrap">{draft.email_body}</p>
                   <button
                     onClick={() => copyDraft(inst.id, draft)}
-                    className="mt-2 rounded bg-gray-200 px-2 py-1 text-xs hover:bg-gray-300"
+                    className="mt-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-xs hover:bg-gray-300 dark:hover:bg-gray-600"
                   >
                     {copied === inst.id ? 'Copied!' : 'Copy to clipboard'}
                   </button>

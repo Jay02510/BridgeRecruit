@@ -130,7 +130,7 @@ export default function Home() {
       )}
 
       {typeof meResult !== 'undefined' && meResult !== null ? (
-        <pre className="max-w-2xl whitespace-pre-wrap rounded bg-gray-50 p-4 text-sm">
+        <pre className="max-w-2xl whitespace-pre-wrap rounded bg-gray-50 p-4 text-sm text-gray-900">
           {JSON.stringify(meResult, null, 2)}
         </pre>
       ) : null}
@@ -144,7 +144,7 @@ export default function Home() {
             readOnly
             value={devToken}
             onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-            className="mt-2 h-24 w-full rounded border border-amber-300 bg-amber-50 p-2 text-xs"
+            className="mt-2 h-24 w-full rounded border border-amber-300 bg-amber-50 p-2 text-xs text-gray-900"
           />
         </div>
       )}

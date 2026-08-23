@@ -89,12 +89,12 @@ export default function InstitutionsPage() {
           placeholder="Search by name…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="rounded border px-3 py-1.5 text-sm"
+          className="rounded border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-1.5 text-sm"
         />
         <select
           value={tier}
           onChange={(e) => setTier(e.target.value)}
-          className="rounded border px-3 py-1.5 text-sm"
+          className="rounded border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-1.5 text-sm"
         >
           <option value="">All tiers</option>
           <option value="tier_1_feeder">Tier 1 — Feeder</option>
@@ -104,7 +104,7 @@ export default function InstitutionsPage() {
         <select
           value={healthStatus}
           onChange={(e) => setHealthStatus(e.target.value)}
-          className="rounded border px-3 py-1.5 text-sm"
+          className="rounded border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-1.5 text-sm"
         >
           <option value="">All health statuses</option>
           <option value="active_warm">Active / Warm</option>
@@ -113,12 +113,12 @@ export default function InstitutionsPage() {
         </select>
       </div>
 
-      {error && <p className="text-sm text-red-700">{error}</p>}
-      {loading && <p className="text-sm text-gray-500">Loading…</p>}
+      {error && <p className="text-sm text-red-700 dark:text-red-400">{error}</p>}
+      {loading && <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>}
 
       <table className="w-full text-sm border-collapse">
         <thead>
-          <tr className="border-b text-left">
+          <tr className="border-b border-gray-200 dark:border-gray-700 text-left">
             <th className="py-2 pr-4">Name</th>
             <th className="py-2 pr-4">Location</th>
             <th className="py-2 pr-4">Tier</th>
@@ -129,7 +129,7 @@ export default function InstitutionsPage() {
         </thead>
         <tbody>
           {institutions.map((inst) => (
-            <tr key={inst.id} className="border-b">
+            <tr key={inst.id} className="border-b border-gray-200 dark:border-gray-700">
               <td className="py-2 pr-4 font-medium">{inst.name}</td>
               <td className="py-2 pr-4">{inst.city}, {inst.country}</td>
               <td className="py-2 pr-4">{inst.tier.replace(/_/g, ' ')}</td>
@@ -148,7 +148,7 @@ export default function InstitutionsPage() {
       </table>
 
       {!loading && institutions.length === 0 && (
-        <p className="text-sm text-gray-500">No institutions match these filters.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">No institutions match these filters.</p>
       )}
     </main>
   );
