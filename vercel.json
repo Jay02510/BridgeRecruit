@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/v1/cron/detect-stalled",
+      "schedule": "0 17 * * *"
+    }
+  ]
+}
