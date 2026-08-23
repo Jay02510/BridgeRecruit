@@ -27,7 +27,7 @@ each phase; deviations are called out below, not silent.
 | 5 | AI features (thread summarization, re-engagement drafts) | ✅ Done (draft-reengagement has no UI yet — needs Phase 6's dashboard) |
 | 6 | Territory Management web dashboard | ✅ Done (table, Needs Attention, Kanban pipeline, CSV import/export) |
 | 7 | Stall/ghosting detection cron | ✅ Done |
-| 8 | Polish & demo prep | ⬜ Not started |
+| 8 | Polish & demo prep | 🔵 In progress (code polish done; interactive sign-in fix still pending) |
 
 ## What Works Today (demoable)
 
@@ -41,6 +41,9 @@ each phase; deviations are called out below, not silent.
 - `POST /api/v1/ai/draft-reengagement` generates a warm re-engagement email draft for stalled institutions — endpoint works, awaiting a Phase 6 UI to call it from.
 - Web dashboard: `/dashboard/institutions` (searchable/filterable directory + CSV import/export), `/dashboard/needs-attention` (stalled institutions, one-click AI re-engagement draft + copy-to-clipboard), and `/dashboard/pipeline` (drag-and-drop Kanban across the PRD's 5 pipeline stages). All sign in via the same MSAL flow as the home page.
 - Nightly stall-detection cron (`GET /api/v1/cron/detect-stalled`, `vercel.json`): tier-aware decay scoring per the PRD's business rules, auto-creates `is_stalled_reengagement` follow-up tasks, idempotent across runs.
+- `institutions.ownership_type` / `partnership_finalized`: two client Excel columns that had no home in the schema before, now flow through create/update/CSV import-export and the institutions table UI.
+- Basic Graph retry/backoff (`lib/graph/withRetry.ts`) wraps the calendar-push call — honors `Retry-After`, exponential backoff with jitter on 429/5xx.
+- `scripts/seed-demo-stalled.mjs` / `delete-demo-stalled.mjs`: adds/removes one clearly-labeled `[DEMO]` stalled institution so "Needs Attention" has something to show live — real client data has nothing past 30 days inactive yet.
 
 ## Known Deviations From the Literal PRD (flagged, not silent)
 
@@ -58,10 +61,13 @@ each phase; deviations are called out below, not silent.
 
 ## Next Up
 
-Phase 8 — polish & demo prep: perf checks, error/loading states, basic Graph
-retry/backoff, clean demo seed data, and (before any client-facing demo)
-replacing the temporary dev-token sign-in bypass with a working interactive
-Office dialog flow.
+Finish Phase 8: replace the temporary dev-token sign-in bypass with a
+working interactive Office dialog flow — the one remaining item before any
+real client-facing demo. This is the highest-risk remaining task: the last
+attempt hit environment-specific issues (Korean banking-security software
+intercepting Chrome TLS, Safari dialog domain restrictions) that ate
+significant session time before landing on the dev-token bypass as a
+stopgap. Time-box the next attempt.
 
 ---
 
