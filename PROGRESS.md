@@ -25,7 +25,7 @@ each phase; deviations are called out below, not silent.
 | 3 | Auth — MSAL + On-Behalf-Of Graph token exchange | ✅ Done |
 | 4 | Outlook Add-in (context card, quick-create, logging, calendar sync) | ✅ Done |
 | 5 | AI features (thread summarization, re-engagement drafts) | ✅ Done (draft-reengagement has no UI yet — needs Phase 6's dashboard) |
-| 6 | Territory Management web dashboard | ⬜ Not started |
+| 6 | Territory Management web dashboard | 🔵 In progress (table + Needs Attention done; Kanban + CSV deferred per cutline) |
 | 7 | Stall/ghosting detection cron | ⬜ Not started |
 | 8 | Polish & demo prep | ⬜ Not started |
 
@@ -39,6 +39,7 @@ each phase; deviations are called out below, not silent.
 - Real client sample data seeded from `TalkFile_Julian_Partner Interactions-sample.xlsx` (3 institutions, 1 contact, 6 interactions, 3 follow-ups) — replaced earlier placeholder seed data entirely.
 - Log Email Touchpoint now runs a real OpenAI-powered thread summary (strict JSON schema) instead of a manual stub, with a <15-word fallback per the PRD's LLM resilience guardrail (FR-2.1 + Phase 5).
 - `POST /api/v1/ai/draft-reengagement` generates a warm re-engagement email draft for stalled institutions — endpoint works, awaiting a Phase 6 UI to call it from.
+- Web dashboard: `/dashboard/institutions` (searchable/filterable directory) and `/dashboard/needs-attention` (stalled institutions, one-click AI re-engagement draft + copy-to-clipboard). Both sign in via the same MSAL flow as the home page.
 
 ## Known Deviations From the Literal PRD (flagged, not silent)
 
@@ -55,9 +56,9 @@ each phase; deviations are called out below, not silent.
 
 ## Next Up
 
-Phase 6 — Territory Management web dashboard (institution table, Kanban
-pipeline, Needs Attention queue). This is also where `draft-reengagement`
-gets its first UI — the endpoint works today but nothing calls it yet.
+Phase 7 — stall/ghosting detection cron (nightly `decay_score` job), or
+finish out Phase 6's deferred pieces (Kanban pipeline_stage migration,
+CSV import/export) if a client demo needs them first.
 
 ---
 
