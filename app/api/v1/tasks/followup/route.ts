@@ -4,6 +4,7 @@ import { createFollowupTaskSchema } from '@/lib/api-types';
 import { verifyBearerToken, TokenVerificationError } from '@/lib/auth/verifyToken';
 import { resolveUserId } from '@/lib/auth/resolveUser';
 import { exchangeForGraphToken } from '@/lib/graph/obo';
+import { graphFetchWithRetry } from '@/lib/graph/withRetry';
 import { corsHeaders } from '@/lib/cors';
 
 export async function OPTIONS() {
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
     const inboundToken = authHeader!.slice('Bearer '.length);
     const graphToken = await exchangeForGraphToken(inboundToken, tenantId, ['Calendars.ReadWrite']);
 
-    const graphResponse = await fetch('https://graph.microsoft.com/v1.0/me/events', {
+    const graphResponse = await graphFetchWithRetry('https://graph.microsoft.com/v1.0/me/events', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${graphToken.accessToken}`,
