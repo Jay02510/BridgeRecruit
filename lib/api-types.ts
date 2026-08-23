@@ -52,7 +52,6 @@ export type CreateFollowupTaskInput = z.infer<typeof createFollowupTaskSchema>;
 // POST /api/v1/institutions (unmatched-domain quick-create, used by Phase 4)
 // ============================================================================
 export const createInstitutionSchema = z.object({
-  user_id: uuid(),
   name: z.string().min(1),
   domain: z.string().min(1),
   institution_type: z

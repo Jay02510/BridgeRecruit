@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useMsal, useIsAuthenticated } from '@azure/msal-react';
-import { apiLoginRequest, graphConsentRequest } from '@/lib/msal/config';
+import { apiLoginRequest, graphConsentRequest, calendarConsentRequest } from '@/lib/msal/config';
 
 export default function Home() {
   const { instance, accounts } = useMsal();
@@ -10,6 +10,7 @@ export default function Home() {
   const [meResult, setMeResult] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [devToken, setDevToken] = useState<string | null>(null);
 
   async function handleLogin() {
     setError(null);
@@ -32,6 +33,11 @@ export default function Home() {
     await instance.acquireTokenRedirect({ ...graphConsentRequest, account: accounts[0] });
   }
 
+  async function handleGrantCalendarAccess() {
+    setError(null);
+    await instance.acquireTokenRedirect({ ...calendarConsentRequest, account: accounts[0] });
+  }
+
   async function callMe() {
     setLoading(true);
     setError(null);
@@ -42,6 +48,7 @@ export default function Home() {
         ...apiLoginRequest,
         account,
       });
+      setDevToken(tokenResult.accessToken);
       const res = await fetch('/api/v1/me', {
         headers: { Authorization: `Bearer ${tokenResult.accessToken}` },
       });
@@ -80,6 +87,12 @@ export default function Home() {
               1. Grant Graph Access
             </button>
             <button
+              onClick={handleGrantCalendarAccess}
+              className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
+            >
+              1b. Grant Calendar Access
+            </button>
+            <button
               onClick={callMe}
               disabled={loading}
               className="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:opacity-50"
@@ -107,6 +120,20 @@ export default function Home() {
           {JSON.stringify(meResult, null, 2)}
         </pre>
       ) : null}
+
+      {devToken && (
+        <div className="w-full max-w-2xl">
+          <p className="text-sm font-semibold text-amber-700">
+            DEV ONLY — paste this into the add-in taskpane&apos;s dev bypass field (expires in ~1hr):
+          </p>
+          <textarea
+            readOnly
+            value={devToken}
+            onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+            className="mt-2 h-24 w-full rounded border border-amber-300 bg-amber-50 p-2 text-xs"
+          />
+        </div>
+      )}
     </main>
   );
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase/server';
-import { createInteractionSchema } from '@/lib/api-types';
+import { createInstitutionSchema } from '@/lib/api-types';
 import { verifyBearerToken, TokenVerificationError } from '@/lib/auth/verifyToken';
 import { resolveUserId } from '@/lib/auth/resolveUser';
 import { corsHeaders } from '@/lib/cors';
@@ -9,12 +9,10 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders() });
 }
 
-// POST /api/v1/interactions
+// POST /api/v1/institutions
 //
-// Logs an email, in-person visit, fair booth, or virtual call. Insert
-// triggers trg_after_interaction_insert, which cascades institutions.
-// last_interaction_at (and therefore health_status) automatically — no
-// application-side bookkeeping needed here.
+// FR-1.1's "1-click Add New Institution" quick-creation form, used by the
+// add-in when a sender's domain doesn't match any existing institution.
 export async function POST(request: NextRequest) {
   let claims;
   try {
@@ -41,7 +39,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: corsHeaders() });
   }
 
-  const parsed = createInteractionSchema.safeParse(body);
+  const parsed = createInstitutionSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'Invalid request body', details: parsed.error.flatten() },
@@ -50,9 +48,8 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = getSupabaseServer();
-
   const { data, error } = await supabase
-    .from('interactions')
+    .from('institutions')
     .insert({ ...parsed.data, user_id: userId })
     .select()
     .single();

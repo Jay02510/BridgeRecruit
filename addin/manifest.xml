@@ -18,6 +18,9 @@
 
   <AppDomains>
     <AppDomain>https://localhost:3000</AppDomain>
+    <AppDomain>https://login.microsoftonline.com</AppDomain>
+    <AppDomain>https://login.live.com</AppDomain>
+    <AppDomain>https://account.live.com</AppDomain>
   </AppDomains>
 
   <Hosts>

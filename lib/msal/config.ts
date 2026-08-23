@@ -43,3 +43,10 @@ export const apiLoginRequest = {
 export const graphConsentRequest = {
   scopes: ['https://graph.microsoft.com/User.Read'],
 };
+
+// Separate incremental consent step for Calendars.ReadWrite (needed by
+// POST /api/v1/tasks/followup's Graph event push) — same one-resource-per-
+// request restriction as graphConsentRequest above.
+export const calendarConsentRequest = {
+  scopes: ['https://graph.microsoft.com/Calendars.ReadWrite'],
+};
