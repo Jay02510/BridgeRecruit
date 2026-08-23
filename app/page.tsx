@@ -80,6 +80,20 @@ export default function Home() {
         <div className="flex flex-col items-center gap-4">
           <p>Signed in as {accounts[0]?.username}</p>
           <div className="flex gap-3">
+            <a
+              href="/dashboard/institutions"
+              className="rounded bg-slate-700 px-4 py-2 text-white hover:bg-slate-800"
+            >
+              Institutions Dashboard
+            </a>
+            <a
+              href="/dashboard/needs-attention"
+              className="rounded bg-slate-700 px-4 py-2 text-white hover:bg-slate-800"
+            >
+              Needs Attention
+            </a>
+          </div>
+          <div className="flex gap-3">
             <button
               onClick={handleGrantGraphAccess}
               className="rounded bg-purple-600 px-4 py-2 text-white hover:bg-purple-700"

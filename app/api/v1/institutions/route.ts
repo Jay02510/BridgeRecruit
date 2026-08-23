@@ -9,6 +9,43 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders() });
 }
 
+// GET /api/v1/institutions
+//
+// Institution directory for the Territory Management dashboard (Phase 6):
+// supports search (name) and filter by tier/health_status/country.
+export async function GET(request: NextRequest) {
+  try {
+    await verifyBearerToken(request.headers.get('authorization'));
+  } catch (err) {
+    if (err instanceof TokenVerificationError) {
+      return NextResponse.json({ error: err.message }, { status: 401, headers: corsHeaders() });
+    }
+    throw err;
+  }
+
+  const { searchParams } = new URL(request.url);
+  const search = searchParams.get('search');
+  const tier = searchParams.get('tier');
+  const healthStatus = searchParams.get('health_status');
+  const country = searchParams.get('country');
+
+  const supabase = getSupabaseServer();
+  let query = supabase.from('institutions').select('*').order('name', { ascending: true });
+
+  if (search) query = query.ilike('name', `%${search}%`);
+  if (tier) query = query.eq('tier', tier);
+  if (healthStatus) query = query.eq('health_status', healthStatus);
+  if (country) query = query.eq('country', country);
+
+  const { data, error } = await query;
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders() });
+  }
+
+  return NextResponse.json(data, { status: 200, headers: corsHeaders() });
+}
+
 // POST /api/v1/institutions
 //
 // FR-1.1's "1-click Add New Institution" quick-creation form, used by the
