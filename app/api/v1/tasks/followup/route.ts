@@ -75,6 +75,14 @@ export async function POST(request: NextRequest) {
     .eq('id', taskFields.institution_id)
     .maybeSingle();
 
+  const { data: contact } = taskFields.contact_id
+    ? await supabase
+        .from('contacts')
+        .select('name, preferences_notes')
+        .eq('id', taskFields.contact_id)
+        .maybeSingle()
+    : { data: null };
+
   const { data: recentInteractions } = await supabase
     .from('interactions')
     .select('channel, subject, interaction_date')
@@ -91,9 +99,12 @@ export async function POST(request: NextRequest) {
     `- Target: ${institution?.name ?? 'Unknown institution'}${institution?.tier ? ` (${institution.tier.replace(/_/g, ' ')})` : ''}`,
     `- Focus: ${taskFields.focus_agenda ?? taskFields.title}`,
     historyLines ? `- Recent history:\n${historyLines}` : '',
+    contact?.preferences_notes ? `- Counselor preferences: ${contact.preferences_notes}` : '',
   ]
     .filter(Boolean)
     .join('\n');
+
+  const subjectContactSuffix = contact?.name ? ` (${contact.name})` : '';
 
   const startDate = new Date(taskFields.due_date);
   const endDate = new Date(startDate.getTime() + 30 * 60 * 1000);
@@ -111,7 +122,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        subject: `Follow-up: ${institution?.name ?? taskFields.title}`,
+        subject: `Follow-up: ${institution?.name ?? taskFields.title}${subjectContactSuffix}`,
         body: { contentType: 'Text', content: briefBody },
         start: { dateTime: toGraphDateTime(startDate), timeZone: 'Asia/Seoul' },
         end: { dateTime: toGraphDateTime(endDate), timeZone: 'Asia/Seoul' },
