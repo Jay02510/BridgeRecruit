@@ -25,7 +25,7 @@ each phase; deviations are called out below, not silent.
 | 3 | Auth — MSAL + On-Behalf-Of Graph token exchange | ✅ Done |
 | 4 | Outlook Add-in (context card, quick-create, logging, calendar sync) | ✅ Done |
 | 5 | AI features (thread summarization, re-engagement drafts) | ✅ Done (draft-reengagement has no UI yet — needs Phase 6's dashboard) |
-| 6 | Territory Management web dashboard | 🔵 In progress (table + Needs Attention done; Kanban + CSV deferred per cutline) |
+| 6 | Territory Management web dashboard | ✅ Done (table, Needs Attention, Kanban pipeline, CSV import/export) |
 | 7 | Stall/ghosting detection cron | ⬜ Not started |
 | 8 | Polish & demo prep | ⬜ Not started |
 
@@ -39,13 +39,13 @@ each phase; deviations are called out below, not silent.
 - Real client sample data seeded from `TalkFile_Julian_Partner Interactions-sample.xlsx` (3 institutions, 1 contact, 6 interactions, 3 follow-ups) — replaced earlier placeholder seed data entirely.
 - Log Email Touchpoint now runs a real OpenAI-powered thread summary (strict JSON schema) instead of a manual stub, with a <15-word fallback per the PRD's LLM resilience guardrail (FR-2.1 + Phase 5).
 - `POST /api/v1/ai/draft-reengagement` generates a warm re-engagement email draft for stalled institutions — endpoint works, awaiting a Phase 6 UI to call it from.
-- Web dashboard: `/dashboard/institutions` (searchable/filterable directory) and `/dashboard/needs-attention` (stalled institutions, one-click AI re-engagement draft + copy-to-clipboard). Both sign in via the same MSAL flow as the home page.
+- Web dashboard: `/dashboard/institutions` (searchable/filterable directory + CSV import/export), `/dashboard/needs-attention` (stalled institutions, one-click AI re-engagement draft + copy-to-clipboard), and `/dashboard/pipeline` (drag-and-drop Kanban across the PRD's 5 pipeline stages). All sign in via the same MSAL flow as the home page.
 
 ## Known Deviations From the Literal PRD (flagged, not silent)
 
 1. **API layer**: Next.js Route Handlers instead of a separate Fastify gateway — same endpoint paths/shapes, fewer moving parts for a solo MVP build. Easily split out later.
 2. **Interactive sign-in bypass (temporary, dev-only)**: the add-in's Office-dialog MSAL sign-in is currently unreliable on this dev machine (Korean banking-security software intercepting Chrome TLS, Safari dialog-navigation restrictions). A dev-only token-paste bypass in the taskpane unblocks feature testing. **Must be removed before any client-facing demo.**
-3. **`pipeline_stage` column**: PRD's Kanban view (FR-5.2) has no backing column in its own DDL — this is a gap in the spec, not a redesign. Will be added via a Phase 6 migration.
+3. **`pipeline_stage` column**: PRD's Kanban view (FR-5.2) has no backing column in its own DDL — this is a gap in the spec, not a redesign. Added via `0002_pipeline_stage.sql`, applied manually through the Supabase SQL Editor (no CLI/DB connection available in this environment).
 
 ## Environment Notes (for resuming this project)
 
@@ -56,9 +56,12 @@ each phase; deviations are called out below, not silent.
 
 ## Next Up
 
-Phase 7 — stall/ghosting detection cron (nightly `decay_score` job), or
-finish out Phase 6's deferred pieces (Kanban pipeline_stage migration,
-CSV import/export) if a client demo needs them first.
+Phase 7 — stall/ghosting detection cron: port the PRD's `detectStalledPartnerships`
+decay-score function, nightly Vercel Cron trigger.
+
+**Action needed before Phase 6 features work**: run `supabase/migrations/0002_pipeline_stage.sql`
+in the Supabase SQL Editor — it wasn't applied automatically (no CLI/DB
+connection in this dev environment).
 
 ---
 
