@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+  <title>BridgeRecruit</title>
+  <!-- Office.js must be loaded from the CDN, not bundled -->
+  <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    body { font-family: Segoe UI, sans-serif; margin: 12px; font-size: 14px; }
+    h1 { font-size: 18px; margin: 0 0 12px; }
+    #status { color: #666; }
+    button { padding: 8px 14px; font-size: 14px; cursor: pointer; }
+    #school-card { margin-top: 16px; padding: 12px; border: 1px solid #ddd; border-radius: 6px; display: none; }
+    #school-card h2 { font-size: 16px; margin: 0 0 4px; }
+    #school-card .meta { color: #666; font-size: 12px; margin-bottom: 8px; }
+    #school-card ul { margin: 8px 0 0; padding-left: 18px; }
+    #school-card li { margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+  <div id="app-body" style="display: none;">
+    <h1>BridgeRecruit</h1>
+    <div id="status">Loading…</div>
+    <div id="sender-domain"></div>
+    <button id="signin-btn" style="display: none;">Sign in</button>
+    <div id="school-card"></div>
+  </div>
+</body>
+</html>

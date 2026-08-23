@@ -1,17 +1,23 @@
 {
-  "name": "bridgerecruit-tmp",
+  "name": "bridgerecruit",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --experimental-https --experimental-https-key ~/.office-addin-dev-certs/localhost.key --experimental-https-cert ~/.office-addin-dev-certs/localhost.crt",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@azure/msal-browser": "^5.19.0",
+    "@azure/msal-node": "^5.6.0",
+    "@azure/msal-react": "^5.6.0",
+    "@supabase/supabase-js": "^2.112.3",
+    "jose": "^6.2.10",
     "next": "16.3.2",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -20,6 +26,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
+    "exceljs": "^4.4.0",
+    "supabase": "^2.115.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
