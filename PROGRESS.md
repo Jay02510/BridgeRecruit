@@ -24,7 +24,7 @@ each phase; deviations are called out below, not silent.
 | 2 | Core REST API (lookup, interactions, tasks/followup) | ✅ Done |
 | 3 | Auth — MSAL + On-Behalf-Of Graph token exchange | ✅ Done |
 | 4 | Outlook Add-in (context card, quick-create, logging, calendar sync) | ✅ Done |
-| 5 | AI features (thread summarization, re-engagement drafts) | 🔵 In progress |
+| 5 | AI features (thread summarization, re-engagement drafts) | ✅ Done (draft-reengagement has no UI yet — needs Phase 6's dashboard) |
 | 6 | Territory Management web dashboard | ⬜ Not started |
 | 7 | Stall/ghosting detection cron | ⬜ Not started |
 | 8 | Polish & demo prep | ⬜ Not started |
@@ -37,6 +37,8 @@ each phase; deviations are called out below, not silent.
 - Log Email Touchpoint / Log Visit-Meeting → writes to `interactions`, auto-updates institution health status via DB trigger (FR-2.1/2.2).
 - Set Follow-Up → creates a `tasks_followups` row **and** a real Outlook Calendar event via Graph, with a Pre-Meeting Brief body (school tier, last 3 touchpoints, counselor preferences) (FR-3.1/3.2).
 - Real client sample data seeded from `TalkFile_Julian_Partner Interactions-sample.xlsx` (3 institutions, 1 contact, 6 interactions, 3 follow-ups) — replaced earlier placeholder seed data entirely.
+- Log Email Touchpoint now runs a real OpenAI-powered thread summary (strict JSON schema) instead of a manual stub, with a <15-word fallback per the PRD's LLM resilience guardrail (FR-2.1 + Phase 5).
+- `POST /api/v1/ai/draft-reengagement` generates a warm re-engagement email draft for stalled institutions — endpoint works, awaiting a Phase 6 UI to call it from.
 
 ## Known Deviations From the Literal PRD (flagged, not silent)
 
@@ -53,10 +55,9 @@ each phase; deviations are called out below, not silent.
 
 ## Next Up
 
-Phase 5 — AI thread summarization (`POST /api/v1/ai/summarize-thread`) and
-re-engagement draft generation (`POST /api/v1/ai/draft-reengagement`), using
-OpenAI Structured Outputs per the PRD's prompt templates. Replaces the
-manual-textarea stub currently in "Log Email Touchpoint."
+Phase 6 — Territory Management web dashboard (institution table, Kanban
+pipeline, Needs Attention queue). This is also where `draft-reengagement`
+gets its first UI — the endpoint works today but nothing calls it yet.
 
 ---
 
