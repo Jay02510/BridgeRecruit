@@ -38,6 +38,7 @@ export default function InstitutionsPage() {
   const [healthStatus, setHealthStatus] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -64,6 +65,50 @@ export default function InstitutionsPage() {
     if (isAuthenticated) load();
   }, [isAuthenticated, load]);
 
+  async function handleExport() {
+    setError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/v1/institutions/export', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`Export failed (${res.status})`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'institutions.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
+
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImportStatus('Importing…');
+    setError(null);
+    try {
+      const token = await getToken();
+      const text = await file.text();
+      const res = await fetch('/api/v1/institutions/import', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'text/csv' },
+        body: text,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `Import failed (${res.status})`);
+      setImportStatus(`Imported ${data.imported}, skipped ${data.skipped}.`);
+      await load();
+    } catch (err) {
+      setImportStatus(null);
+      setError((err as Error).message);
+    }
+  }
+
   if (!isAuthenticated) {
     return (
       <main className="p-8">
@@ -78,9 +123,28 @@ export default function InstitutionsPage() {
     <main className="p-8 flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Institutions</h1>
-        <Link href="/dashboard/needs-attention" className="text-blue-600 underline text-sm">
-          Needs Attention →
-        </Link>
+        <div className="flex gap-4 text-sm">
+          <Link href="/dashboard/pipeline" className="text-blue-600 underline">
+            Pipeline →
+          </Link>
+          <Link href="/dashboard/needs-attention" className="text-blue-600 underline">
+            Needs Attention →
+          </Link>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleExport}
+          className="rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
+        >
+          Export CSV
+        </button>
+        <label className="rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm hover:bg-gray-300 dark:hover:bg-gray-600 cursor-pointer">
+          Import CSV
+          <input type="file" accept=".csv" onChange={handleImport} className="hidden" />
+        </label>
+        {importStatus && <span className="text-sm text-gray-500 dark:text-gray-400">{importStatus}</span>}
       </div>
 
       <div className="flex gap-3">

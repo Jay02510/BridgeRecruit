@@ -67,6 +67,23 @@ export const createInstitutionSchema = z.object({
 export type CreateInstitutionInput = z.infer<typeof createInstitutionSchema>;
 
 // ============================================================================
+// PATCH /api/v1/institutions/:id
+// ============================================================================
+export const pipelineStageEnum = z.enum([
+  'initial_outreach',
+  'in_discussion',
+  'visit_scheduled',
+  'agreement_feeder_active',
+  'dormant',
+]);
+export type PipelineStage = z.infer<typeof pipelineStageEnum>;
+
+export const updateInstitutionSchema = createInstitutionSchema
+  .partial()
+  .extend({ pipeline_stage: pipelineStageEnum.optional() });
+export type UpdateInstitutionInput = z.infer<typeof updateInstitutionSchema>;
+
+// ============================================================================
 // POST /api/v1/ai/summarize-thread
 // ============================================================================
 export const summarizeThreadSchema = z.object({
