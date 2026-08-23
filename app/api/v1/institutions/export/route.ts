@@ -15,6 +15,8 @@ const CSV_COLUMNS = [
   'country',
   'city',
   'curriculum',
+  'ownership_type',
+  'partnership_finalized',
   'pipeline_stage',
   'health_status',
   'last_interaction_at',

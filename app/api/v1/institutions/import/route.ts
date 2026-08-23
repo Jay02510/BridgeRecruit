@@ -54,6 +54,10 @@ export async function POST(request: NextRequest) {
       country: row.country || undefined,
       city: row.city,
       curriculum: row.curriculum || undefined,
+      ownership_type: row.ownership_type || undefined,
+      partnership_finalized: row.partnership_finalized
+        ? /^(true|yes|1)$/i.test(row.partnership_finalized.trim())
+        : undefined,
     });
     if (result.success) {
       validRows.push({ ...result.data, user_id: userId });

@@ -71,6 +71,7 @@ async function main() {
     if (clean(d['Type of Collaboration/History'])) notesParts.push(`Collaboration: ${clean(d['Type of Collaboration/History'])}`);
     if (clean(d["University's Program(s) to highlight"])) notesParts.push(`Programs: ${clean(d["University's Program(s) to highlight"])}`);
     if (clean(d['Recent Activity (Exchange Students, StudyUSA, F1, etc.)'])) notesParts.push(`Recent activity: ${clean(d['Recent Activity (Exchange Students, StudyUSA, F1, etc.)'])}`);
+    const ownership = clean(d['Public or Private']);
     return {
       id,
       user_id: DEV_USER_ID,
@@ -79,6 +80,8 @@ async function main() {
       institution_type: itype,
       tier: 'tier_2_high_potential',
       country: 'South Korea',
+      ownership_type: ownership ? ownership.toLowerCase() : null,
+      partnership_finalized: /^yes$/i.test(clean(d['Partnership Finalized?']) ?? ''),
       city: clean(d['City']) ?? 'Unknown',
       address: clean(d['Address']),
       notes: notesParts.length ? notesParts.join(' | ') : null,

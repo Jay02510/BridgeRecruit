@@ -15,6 +15,8 @@ interface Institution {
   city: string;
   health_status: string;
   last_interaction_at: string | null;
+  ownership_type: string | null;
+  partnership_finalized: boolean;
 }
 
 const HEALTH_LABELS: Record<string, string> = {
@@ -187,6 +189,8 @@ export default function InstitutionsPage() {
             <th className="py-2 pr-4">Location</th>
             <th className="py-2 pr-4">Tier</th>
             <th className="py-2 pr-4">Type</th>
+            <th className="py-2 pr-4">Ownership</th>
+            <th className="py-2 pr-4">Partnership</th>
             <th className="py-2 pr-4">Health</th>
             <th className="py-2 pr-4">Last Interaction</th>
           </tr>
@@ -198,6 +202,8 @@ export default function InstitutionsPage() {
               <td className="py-2 pr-4">{inst.city}, {inst.country}</td>
               <td className="py-2 pr-4">{inst.tier.replace(/_/g, ' ')}</td>
               <td className="py-2 pr-4">{inst.institution_type.replace(/_/g, ' ')}</td>
+              <td className="py-2 pr-4">{inst.ownership_type ?? '—'}</td>
+              <td className="py-2 pr-4">{inst.partnership_finalized ? 'Finalized' : 'Pending'}</td>
               <td className="py-2 pr-4">
                 <span className={`rounded px-2 py-0.5 text-xs ${HEALTH_COLORS[inst.health_status] ?? ''}`}>
                   {HEALTH_LABELS[inst.health_status] ?? inst.health_status}

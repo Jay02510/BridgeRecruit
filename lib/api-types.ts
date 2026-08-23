@@ -63,6 +63,8 @@ export const createInstitutionSchema = z.object({
   country: z.string().default('South Korea'),
   city: z.string().min(1),
   curriculum: z.string().nullable().optional(),
+  ownership_type: z.enum(['public', 'private']).nullable().optional(),
+  partnership_finalized: z.boolean().optional().default(false),
 });
 export type CreateInstitutionInput = z.infer<typeof createInstitutionSchema>;
 
