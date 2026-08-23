@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   const country = searchParams.get('country');
 
   const supabase = getSupabaseServer();
-  let query = supabase.from('institutions').select('*').order('name', { ascending: true });
+  let query = supabase.from('institutions_with_health').select('*').order('name', { ascending: true });
 
   if (search) query = query.ilike('name', `%${search}%`);
   if (tier) query = query.eq('tier', tier);
