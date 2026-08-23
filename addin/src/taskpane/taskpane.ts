@@ -105,13 +105,23 @@ function renderQuickActions() {
 function renderLogEmailPanel() {
   const panel = document.getElementById('action-panel')!;
   panel.innerHTML = `
-    <form id="log-email-form">
-      <label>Summary (AI auto-summary is stubbed until Phase 5 — enter manually for now)<br/>
+    <div id="ai-summary-status">Generating AI summary…</div>
+    <form id="log-email-form" style="display: none;">
+      <label>Summary (AI-generated — edit as needed)<br/>
         <textarea id="email-summary" rows="3" required></textarea>
       </label><br/>
+      <div id="ai-action-item" style="font-size: 12px; color: #444; margin-bottom: 8px;"></div>
       <button type="submit">Save</button>
     </form>
   `;
+
+  let threadText = '';
+  const item = Office.context.mailbox.item!;
+  item.body.getAsync(Office.CoercionType.Text, async (result) => {
+    threadText = result.status === Office.AsyncResultStatus.Succeeded ? result.value : '';
+    await populateAiSummary(threadText);
+  });
+
   document.getElementById('log-email-form')!.addEventListener('submit', async (e) => {
     e.preventDefault();
     const summary = (document.getElementById('email-summary') as HTMLTextAreaElement).value;
@@ -119,9 +129,32 @@ function renderLogEmailPanel() {
       channel: 'email',
       subject: emailSubject || 'Email touchpoint',
       summary,
-      raw_content: summary,
+      raw_content: threadText,
     });
   });
+}
+
+async function populateAiSummary(threadText: string) {
+  const statusEl = document.getElementById('ai-summary-status')!;
+  const formEl = document.getElementById('log-email-form') as HTMLFormElement;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/v1/ai/summarize-thread`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ thread_text: threadText || '(empty thread)' }),
+    });
+    if (!res.ok) throw new Error(`AI summary failed (${res.status})`);
+    const data = await res.json();
+    (document.getElementById('email-summary') as HTMLTextAreaElement).value = data.summary ?? '';
+    document.getElementById('ai-action-item')!.textContent = data.suggested_action_item
+      ? `Suggested action: ${data.suggested_action_item}`
+      : '';
+    statusEl.style.display = 'none';
+    formEl.style.display = 'block';
+  } catch {
+    statusEl.textContent = 'AI summary unavailable — enter manually.';
+    formEl.style.display = 'block';
+  }
 }
 
 function renderLogVisitPanel() {

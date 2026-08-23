@@ -65,3 +65,19 @@ export const createInstitutionSchema = z.object({
   curriculum: z.string().nullable().optional(),
 });
 export type CreateInstitutionInput = z.infer<typeof createInstitutionSchema>;
+
+// ============================================================================
+// POST /api/v1/ai/summarize-thread
+// ============================================================================
+export const summarizeThreadSchema = z.object({
+  thread_text: z.string().min(1),
+});
+export type SummarizeThreadInput = z.infer<typeof summarizeThreadSchema>;
+
+// ============================================================================
+// POST /api/v1/ai/draft-reengagement
+// ============================================================================
+export const draftReengagementSchema = z.object({
+  institution_id: uuid(),
+});
+export type DraftReengagementInput = z.infer<typeof draftReengagementSchema>;
