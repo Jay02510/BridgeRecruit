@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import { institutionLookupQuerySchema } from '@/lib/api-types';
 import { verifyBearerToken, TokenVerificationError } from '@/lib/auth/verifyToken';
+import { resolveUserId } from '@/lib/auth/resolveUser';
 import { corsHeaders } from '@/lib/cors';
 
 export async function OPTIONS() {
@@ -11,22 +12,27 @@ export async function OPTIONS() {
 // GET /api/v1/institutions/lookup?domain=X&email=Y
 //
 // Auto-invoked by the Outlook add-in when the recruiter opens an email.
-// Matches domain against institutions, returns the school card, primary
-// (or email-matched) contact, and last 3 interactions. Perf-critical path
-// (<300ms target) — relies on idx_institutions_domain.
-//
-// Requires a valid bearer token (proves the add-in's dialog-based sign-in
-// succeeded) but does NOT yet scope institutions by the signed-in user's
-// own user_id — same MVP single-recruiter simplification already used by
-// the interactions/tasks routes' hardcoded DEV_USER_ID, not a new gap.
+// Matches domain against the signed-in recruiter's own institutions,
+// returns the school card, primary (or email-matched) contact, and last 3
+// interactions. Perf-critical path (<300ms target) — relies on
+// idx_institutions_domain.
 export async function GET(request: NextRequest) {
+  let claims;
   try {
-    await verifyBearerToken(request.headers.get('authorization'));
+    claims = await verifyBearerToken(request.headers.get('authorization'));
   } catch (err) {
     if (err instanceof TokenVerificationError) {
       return NextResponse.json({ error: err.message }, { status: 401, headers: corsHeaders() });
     }
     throw err;
+  }
+
+  const userId = await resolveUserId(claims.oid as string);
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'No user record found for this token. Sign in via the dashboard first.' },
+      { status: 401, headers: corsHeaders() }
+    );
   }
 
   const { searchParams } = new URL(request.url);
@@ -48,6 +54,7 @@ export async function GET(request: NextRequest) {
   const { data: institution, error: institutionError } = await supabase
     .from('institutions_with_health')
     .select('*')
+    .eq('user_id', userId)
     .ilike('domain', domain)
     .maybeSingle();
 

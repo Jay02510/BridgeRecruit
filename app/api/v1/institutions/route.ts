@@ -12,15 +12,25 @@ export async function OPTIONS() {
 // GET /api/v1/institutions
 //
 // Institution directory for the Territory Management dashboard (Phase 6):
-// supports search (name) and filter by tier/health_status/country.
+// supports search (name) and filter by tier/health_status/country. Scoped
+// to the signed-in recruiter's own institutions only.
 export async function GET(request: NextRequest) {
+  let claims;
   try {
-    await verifyBearerToken(request.headers.get('authorization'));
+    claims = await verifyBearerToken(request.headers.get('authorization'));
   } catch (err) {
     if (err instanceof TokenVerificationError) {
       return NextResponse.json({ error: err.message }, { status: 401, headers: corsHeaders() });
     }
     throw err;
+  }
+
+  const userId = await resolveUserId(claims.oid as string);
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'No user record found for this token. Sign in via the dashboard first.' },
+      { status: 401, headers: corsHeaders() }
+    );
   }
 
   const { searchParams } = new URL(request.url);
@@ -32,7 +42,7 @@ export async function GET(request: NextRequest) {
   const partnershipFinalized = searchParams.get('partnership_finalized');
 
   const supabase = getSupabaseServer();
-  let query = supabase.from('institutions_with_health').select('*').order('name', { ascending: true });
+  let query = supabase.from('institutions_with_health').select('*').eq('user_id', userId).order('name', { ascending: true });
 
   if (search) query = query.ilike('name', `%${search}%`);
   if (tier) query = query.eq('tier', tier);

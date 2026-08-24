@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import { generateReportSchema } from '@/lib/api-types';
 import { verifyBearerToken, TokenVerificationError } from '@/lib/auth/verifyToken';
+import { resolveUserId } from '@/lib/auth/resolveUser';
 import { corsHeaders } from '@/lib/cors';
 import { getOpenAIClient } from '@/lib/openai/client';
 import { buildPartnershipReportPrompt } from '@/lib/openai/prompts';
@@ -17,13 +18,22 @@ export async function OPTIONS() {
 // from the DB, then asks the model to turn them into plain-language
 // highlights/narrative/watch-list — grounded in the stats, not free-form.
 export async function POST(request: NextRequest) {
+  let claims;
   try {
-    await verifyBearerToken(request.headers.get('authorization'));
+    claims = await verifyBearerToken(request.headers.get('authorization'));
   } catch (err) {
     if (err instanceof TokenVerificationError) {
       return NextResponse.json({ error: err.message }, { status: 401, headers: corsHeaders() });
     }
     throw err;
+  }
+
+  const userId = await resolveUserId(claims.oid as string);
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'No user record found for this token. Sign in via the dashboard first.' },
+      { status: 401, headers: corsHeaders() }
+    );
   }
 
   let body: unknown;
@@ -49,7 +59,7 @@ export async function POST(request: NextRequest) {
   // filter on an embedded resource's own columns directly).
   let scopedInstitutionIds: string[] | null = null;
   if (tier || country) {
-    let idQuery = supabase.from('institutions').select('id');
+    let idQuery = supabase.from('institutions').select('id').eq('user_id', userId);
     if (tier) idQuery = idQuery.eq('tier', tier);
     if (country) idQuery = idQuery.eq('country', country);
     const { data: scoped } = await idQuery;
@@ -59,24 +69,28 @@ export async function POST(request: NextRequest) {
   let newInstQuery = supabase
     .from('institutions')
     .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
     .gte('created_at', start_date)
     .lte('created_at', end_date);
   let finalizedQuery = supabase
     .from('institutions')
     .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
     .eq('partnership_finalized', true);
   let interactionsQuery = supabase
     .from('interactions')
     .select('channel, subject, summary, interaction_date, institutions(name)')
+    .eq('user_id', userId)
     .gte('interaction_date', start_date)
     .lte('interaction_date', end_date)
     .order('interaction_date', { ascending: false });
   let followupsQuery = supabase
     .from('tasks_followups')
     .select('status')
+    .eq('user_id', userId)
     .gte('due_date', start_date)
     .lte('due_date', end_date);
-  let healthQuery = supabase.from('institutions_with_health').select('health_status, name');
+  let healthQuery = supabase.from('institutions_with_health').select('health_status, name').eq('user_id', userId);
 
   if (tier) healthQuery = healthQuery.eq('tier', tier);
   if (country) healthQuery = healthQuery.eq('country', country);

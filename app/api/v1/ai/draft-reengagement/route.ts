@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import { draftReengagementSchema } from '@/lib/api-types';
 import { verifyBearerToken, TokenVerificationError } from '@/lib/auth/verifyToken';
+import { resolveUserId } from '@/lib/auth/resolveUser';
 import { corsHeaders } from '@/lib/cors';
 import { getOpenAIClient } from '@/lib/openai/client';
 import { buildReengagementPrompt } from '@/lib/openai/prompts';
@@ -17,13 +18,22 @@ export async function OPTIONS() {
 // warm, low-pressure re-engagement email for a stalled institution using
 // its tier, last touchpoint, and counselor preferences as context.
 export async function POST(request: NextRequest) {
+  let claims;
   try {
-    await verifyBearerToken(request.headers.get('authorization'));
+    claims = await verifyBearerToken(request.headers.get('authorization'));
   } catch (err) {
     if (err instanceof TokenVerificationError) {
       return NextResponse.json({ error: err.message }, { status: 401, headers: corsHeaders() });
     }
     throw err;
+  }
+
+  const userId = await resolveUserId(claims.oid as string);
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'No user record found for this token. Sign in via the dashboard first.' },
+      { status: 401, headers: corsHeaders() }
+    );
   }
 
   let body: unknown;
@@ -48,6 +58,7 @@ export async function POST(request: NextRequest) {
     .from('institutions')
     .select('name, last_interaction_at')
     .eq('id', institution_id)
+    .eq('user_id', userId)
     .maybeSingle();
 
   if (!institution) {

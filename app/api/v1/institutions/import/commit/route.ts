@@ -101,7 +101,7 @@ async function commitGenericMapping(
 
   const { data, error } = await supabase
     .from('institutions')
-    .upsert(validRows, { onConflict: 'domain', ignoreDuplicates: false })
+    .upsert(validRows, { onConflict: 'user_id,domain', ignoreDuplicates: false })
     .select();
 
   if (error) {
@@ -158,7 +158,7 @@ async function commitKnownSheet(
   const institutionRows = extracted.map((r) => ({ ...r.institution, user_id: userId }));
   const { data: institutionData, error: instError } = await supabase
     .from('institutions')
-    .upsert(institutionRows, { onConflict: 'domain', ignoreDuplicates: false })
+    .upsert(institutionRows, { onConflict: 'user_id,domain', ignoreDuplicates: false })
     .select();
 
   if (instError) {

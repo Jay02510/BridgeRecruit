@@ -51,6 +51,20 @@ export async function POST(request: NextRequest) {
 
   const supabase = getSupabaseServer();
 
+  // institution_id is caller-supplied — verify it's actually theirs before
+  // attaching an interaction to it (otherwise any signed-in user could log
+  // activity against, and shift last_interaction_at/health_status for,
+  // another recruiter's institution).
+  const { data: owned } = await supabase
+    .from('institutions')
+    .select('id')
+    .eq('id', parsed.data.institution_id)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (!owned) {
+    return NextResponse.json({ error: 'Institution not found' }, { status: 404, headers: corsHeaders() });
+  }
+
   const { data, error } = await supabase
     .from('interactions')
     .insert({ ...parsed.data, user_id: userId })

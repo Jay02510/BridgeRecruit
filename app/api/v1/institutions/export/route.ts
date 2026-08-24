@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import { verifyBearerToken, TokenVerificationError } from '@/lib/auth/verifyToken';
+import { resolveUserId } from '@/lib/auth/resolveUser';
 import { corsHeaders } from '@/lib/cors';
 
 export async function OPTIONS() {
@@ -33,8 +34,9 @@ function toCsvValue(value: unknown): string {
 // FR-5.3 CSV export "for university executive reporting" — 1-click download
 // of the full institution directory.
 export async function GET(request: NextRequest) {
+  let claims;
   try {
-    await verifyBearerToken(request.headers.get('authorization'));
+    claims = await verifyBearerToken(request.headers.get('authorization'));
   } catch (err) {
     if (err instanceof TokenVerificationError) {
       return NextResponse.json({ error: err.message }, { status: 401, headers: corsHeaders() });
@@ -42,10 +44,19 @@ export async function GET(request: NextRequest) {
     throw err;
   }
 
+  const userId = await resolveUserId(claims.oid as string);
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'No user record found for this token. Sign in via the dashboard first.' },
+      { status: 401, headers: corsHeaders() }
+    );
+  }
+
   const supabase = getSupabaseServer();
   const { data, error } = await supabase
     .from('institutions_with_health')
     .select(CSV_COLUMNS.join(','))
+    .eq('user_id', userId)
     .order('name', { ascending: true });
 
   if (error) {

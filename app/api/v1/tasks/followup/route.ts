@@ -54,6 +54,19 @@ export async function POST(request: NextRequest) {
   const { sync_to_calendar, ...taskFields } = parsed.data;
   const supabase = getSupabaseServer();
 
+  // institution_id is caller-supplied — verify ownership before attaching a
+  // follow-up (and, further down, before reading its contact/interaction
+  // history into the calendar-event body).
+  const { data: owned } = await supabase
+    .from('institutions')
+    .select('id')
+    .eq('id', taskFields.institution_id)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (!owned) {
+    return NextResponse.json({ error: 'Institution not found' }, { status: 404, headers: corsHeaders() });
+  }
+
   const { data: task, error } = await supabase
     .from('tasks_followups')
     .insert({ ...taskFields, user_id: userId })
