@@ -1,6 +1,7 @@
 /* global Office, document */
 
 const API_BASE_URL = 'https://localhost:3000';
+const DASHBOARD_URL = `${API_BASE_URL}/dashboard/institutions`;
 
 interface LookupResponse {
   matched: boolean;
@@ -95,7 +96,7 @@ function renderQuickActions() {
   actionsEl.style.display = 'block';
   actionsEl.innerHTML = `
     <button id="log-email-btn">Log Email Touchpoint</button>
-    <button id="log-visit-btn">Log Visit / Meeting</button>
+    <button id="log-visit-btn">Log Interaction</button>
     <button id="followup-btn">Set Follow-Up</button>
     <div id="action-panel"></div>
   `;
@@ -169,6 +170,7 @@ function renderLogVisitPanel() {
           <option value="fair_booth">Fair / booth</option>
           <option value="virtual_meeting">Virtual meeting</option>
           <option value="phone_call">Phone call</option>
+          <option value="email">Email</option>
         </select>
       </label>
       <label>Discussion notes
@@ -373,6 +375,15 @@ Office.onReady((info) => {
 
   document.getElementById('app-body')!.style.display = 'block';
   const domainEl = document.getElementById('sender-domain')!;
+
+  document.getElementById('dashboard-link')!.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (Office.context.ui?.openBrowserWindow) {
+      Office.context.ui.openBrowserWindow(DASHBOARD_URL);
+    } else {
+      window.open(DASHBOARD_URL, '_blank');
+    }
+  });
 
   const item = Office.context.mailbox?.item;
   if (!item || !item.from) {
