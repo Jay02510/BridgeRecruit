@@ -36,3 +36,54 @@ GUIDELINES:
 4. Maintain a polite, collegial tone appropriate for international school counselors.
 `;
 }
+
+export function buildPartnershipReportPrompt(context: {
+  periodLabel: string;
+  newInstitutions: number;
+  partnershipsFinalized: number;
+  interactionsByChannel: Record<string, number>;
+  followupsCompleted: number;
+  followupsOpen: number;
+  healthCounts: Record<string, number>;
+  notableInteractions: { institution: string; subject: string; summary: string }[];
+  stalledInstitutions: string[];
+}): string {
+  const channelLines = Object.entries(context.interactionsByChannel)
+    .map(([channel, count]) => `- ${channel.replace(/_/g, ' ')}: ${count}`)
+    .join('\n') || '- None logged this period';
+
+  const healthLines = Object.entries(context.healthCounts)
+    .map(([status, count]) => `- ${status.replace(/_/g, ' ')}: ${count}`)
+    .join('\n');
+
+  const notableLines = context.notableInteractions
+    .map((i) => `- ${i.institution} (${i.subject}): ${i.summary}`)
+    .join('\n') || '- None';
+
+  const stalledLines = context.stalledInstitutions.length
+    ? context.stalledInstitutions.map((n) => `- ${n}`).join('\n')
+    : '- None currently stalled';
+
+  return `
+You are writing a brief partnership-activity report for a university's international admissions leadership (non-technical audience: VP/Dean level). Write in plain, confident, factual language — no jargon, no fluff, no hype.
+
+PERIOD: ${context.periodLabel}
+
+RAW STATS:
+- New institutions added: ${context.newInstitutions}
+- Partnerships finalized (all-time total, current): ${context.partnershipsFinalized}
+- Interactions logged this period by channel:
+${channelLines}
+- Follow-up tasks: ${context.followupsCompleted} completed, ${context.followupsOpen} still open
+- Current relationship health across all institutions:
+${healthLines}
+
+NOTABLE INTERACTIONS THIS PERIOD:
+${notableLines}
+
+CURRENTLY STALLED / NEEDS ATTENTION:
+${stalledLines}
+
+Write a headline, 3-5 highlight bullets, a short narrative paragraph, and a watch-list of what needs leadership's attention. Ground every claim in the stats above — do not invent numbers or institutions not listed.
+`;
+}

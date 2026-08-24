@@ -61,3 +61,40 @@ export interface ReengagementDraftResponse {
   subject_line: string;
   email_body: string;
 }
+
+export const partnershipReportResponseSchema = {
+  name: 'partnership_report_response',
+  strict: true,
+  schema: {
+    type: 'object',
+    properties: {
+      headline: {
+        type: 'string',
+        description: 'One-sentence executive headline for the period (the single most important takeaway).',
+      },
+      highlights: {
+        type: 'array',
+        items: { type: 'string' },
+        description: '3-5 short bullet points: notable wins, new partnerships, or momentum this period.',
+      },
+      narrative: {
+        type: 'string',
+        description: 'A short (3-5 sentence) plain-language paragraph summarizing activity for a non-technical leadership audience.',
+      },
+      watch_list: {
+        type: 'array',
+        items: { type: 'string' },
+        description: '1-4 short bullet points on relationships needing attention (stalled, at risk, overdue follow-ups).',
+      },
+    },
+    required: ['headline', 'highlights', 'narrative', 'watch_list'],
+    additionalProperties: false,
+  },
+} as const;
+
+export interface PartnershipReportResponse {
+  headline: string;
+  highlights: string[];
+  narrative: string;
+  watch_list: string[];
+}

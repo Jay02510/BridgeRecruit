@@ -65,8 +65,21 @@ export const createInstitutionSchema = z.object({
   curriculum: z.string().nullable().optional(),
   ownership_type: z.enum(['public', 'private']).nullable().optional(),
   partnership_finalized: z.boolean().optional().default(false),
+  address: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
 });
 export type CreateInstitutionInput = z.infer<typeof createInstitutionSchema>;
+
+// ============================================================================
+// POST /api/v1/ai/generate-report
+// ============================================================================
+export const generateReportSchema = z.object({
+  start_date: z.string().datetime(),
+  end_date: z.string().datetime(),
+  tier: z.string().nullable().optional(),
+  country: z.string().nullable().optional(),
+});
+export type GenerateReportInput = z.infer<typeof generateReportSchema>;
 
 // ============================================================================
 // PATCH /api/v1/institutions/:id

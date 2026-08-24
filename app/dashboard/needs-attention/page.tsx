@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useIsAuthenticated } from '@azure/msal-react';
 import Link from 'next/link';
 import { useApiToken } from '@/lib/hooks/useApiToken';
+import { DashboardNav } from '@/components/dashboard-nav';
 
 interface Institution {
   id: string;
@@ -96,12 +97,8 @@ export default function NeedsAttentionPage() {
 
   return (
     <main className="p-8 flex flex-col gap-4 max-w-3xl">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Needs Attention</h1>
-        <Link href="/dashboard/institutions" className="text-blue-600 underline text-sm">
-          ← All Institutions
-        </Link>
-      </div>
+      <DashboardNav />
+      <h1 className="text-2xl font-semibold">Needs Attention</h1>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Institutions with no touchpoint in the last 30 days (stalled/cold). Draft a low-pressure
         re-engagement email per institution — review before sending, this only drafts.

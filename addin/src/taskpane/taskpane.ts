@@ -26,8 +26,10 @@ function authHeaders(): HeadersInit {
   return { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
 }
 
-function setStatus(text: string) {
-  document.getElementById('status')!.textContent = text;
+function setStatus(text: string, tone: 'neutral' | 'success' | 'error' = 'neutral') {
+  const el = document.getElementById('status')!;
+  el.textContent = text;
+  el.className = tone;
 }
 
 // ---------------------------------------------------------------------------
@@ -40,23 +42,23 @@ function renderQuickCreateForm() {
   cardEl.innerHTML = `
     <p>No institution found for <strong>${senderDomain}</strong>.</p>
     <form id="quick-create-form">
-      <label>Name<br/><input type="text" id="qc-name" value="${guessedName}" required /></label><br/>
-      <label>City<br/><input type="text" id="qc-city" required /></label><br/>
-      <label>Type<br/>
+      <label>Name<input type="text" id="qc-name" value="${guessedName}" required /></label>
+      <label>City<input type="text" id="qc-city" required /></label>
+      <label>Type
         <select id="qc-type">
           <option value="international_high_school">International high school</option>
           <option value="foreign_school">Foreign school</option>
           <option value="local_high_school">Local high school</option>
           <option value="university_partner">University partner</option>
         </select>
-      </label><br/>
-      <label>Tier<br/>
+      </label>
+      <label>Tier
         <select id="qc-tier">
           <option value="tier_1_feeder">Tier 1 (feeder)</option>
           <option value="tier_2_high_potential" selected>Tier 2 (high potential)</option>
           <option value="tier_3_standard">Tier 3 (standard)</option>
         </select>
-      </label><br/>
+      </label>
       <button type="submit">Add New Institution</button>
     </form>
   `;
@@ -74,13 +76,13 @@ function renderQuickCreateForm() {
         body: JSON.stringify({ name, domain: senderDomain, city, institution_type, tier }),
       });
       if (!res.ok) {
-        setStatus(`Create failed (${res.status}).`);
+        setStatus(`Create failed (${res.status}).`, 'error');
         return;
       }
-      setStatus('Institution created.');
+      setStatus('Institution created.', 'success');
       await lookupInstitution();
     } catch (err) {
-      setStatus(`Create error: ${String(err)}`);
+      setStatus(`Create error: ${String(err)}`, 'error');
     }
   });
 }
@@ -107,10 +109,10 @@ function renderLogEmailPanel() {
   panel.innerHTML = `
     <div id="ai-summary-status">Generating AI summary…</div>
     <form id="log-email-form" style="display: none;">
-      <label>Summary (AI-generated — edit as needed)<br/>
+      <label>Summary (AI-generated — edit as needed)
         <textarea id="email-summary" rows="3" required></textarea>
-      </label><br/>
-      <div id="ai-action-item" style="font-size: 12px; color: #444; margin-bottom: 8px;"></div>
+      </label>
+      <div id="ai-action-item" style="font-size: 12px; color: var(--gray-700); margin-bottom: 8px;"></div>
       <button type="submit">Save</button>
     </form>
   `;
@@ -161,20 +163,20 @@ function renderLogVisitPanel() {
   const panel = document.getElementById('action-panel')!;
   panel.innerHTML = `
     <form id="log-visit-form">
-      <label>Channel<br/>
+      <label>Channel
         <select id="visit-channel">
           <option value="in_person_visit">In-person visit</option>
           <option value="fair_booth">Fair / booth</option>
           <option value="virtual_meeting">Virtual meeting</option>
           <option value="phone_call">Phone call</option>
         </select>
-      </label><br/>
-      <label>Discussion notes<br/>
+      </label>
+      <label>Discussion notes
         <textarea id="visit-notes" rows="3" required></textarea>
-      </label><br/>
-      <label>Materials shared (comma-separated)<br/>
+      </label>
+      <label>Materials shared (comma-separated)
         <input type="text" id="visit-materials" />
-      </label><br/>
+      </label>
       <button type="submit">Save</button>
     </form>
   `;
@@ -201,17 +203,17 @@ function renderFollowupPanel() {
   const panel = document.getElementById('action-panel')!;
   panel.innerHTML = `
     <form id="followup-form">
-      <label>Focus / agenda<br/>
+      <label>Focus / agenda
         <textarea id="followup-agenda" rows="2" required></textarea>
-      </label><br/>
-      <label>Due<br/>
+      </label>
+      <label>Due
         <select id="followup-preset">
           <option value="3">In 3 days</option>
           <option value="7">In 1 week</option>
           <option value="14">In 2 weeks</option>
         </select>
-      </label><br/>
-      <label><input type="checkbox" id="followup-sync" checked /> Sync to Outlook Calendar</label><br/>
+      </label>
+      <label class="checkbox-label"><input type="checkbox" id="followup-sync" checked /> Sync to Outlook Calendar</label>
       <button type="submit">Create Follow-Up Action</button>
     </form>
   `;
@@ -238,16 +240,16 @@ function renderFollowupPanel() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setStatus(`Follow-up failed (${res.status}).`);
+        setStatus(`Follow-up failed (${res.status}).`, 'error');
         return;
       }
-      setStatus(
-        sync
-          ? `Follow-up created (calendar: ${data.calendar_sync ?? 'unknown'}).`
-          : 'Follow-up created.'
-      );
+      const panel = document.getElementById('action-panel')!;
+      panel.innerHTML = `<p class="success-message">✓ Follow-up created${
+        sync ? (data.calendar_sync === 'synced' ? ' — synced to calendar.' : ' — calendar sync unavailable.') : '.'
+      }</p>`;
+      setStatus('Follow-up created.', 'success');
     } catch (err) {
-      setStatus(`Follow-up error: ${String(err)}`);
+      setStatus(`Follow-up error: ${String(err)}`, 'error');
     }
   });
 }
@@ -271,13 +273,13 @@ async function postInteraction(fields: {
       }),
     });
     if (!res.ok) {
-      setStatus(`Save failed (${res.status}).`);
+      setStatus(`Save failed (${res.status}).`, 'error');
       return;
     }
-    setStatus('Touchpoint saved.');
+    setStatus('Touchpoint saved.', 'success');
     await lookupInstitution();
   } catch (err) {
-    setStatus(`Save error: ${String(err)}`);
+    setStatus(`Save error: ${String(err)}`, 'error');
   }
 }
 
@@ -323,14 +325,14 @@ async function lookupInstitution() {
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     if (!res.ok) {
-      setStatus(`Lookup failed (${res.status}).`);
+      setStatus(`Lookup failed (${res.status}).`, 'error');
       return;
     }
     const data: LookupResponse = await res.json();
     setStatus('Loaded.');
     renderSchoolCard(data);
   } catch (err) {
-    setStatus(`Lookup error: ${String(err)}`);
+    setStatus(`Lookup error: ${String(err)}`, 'error');
   }
 }
 
@@ -341,7 +343,7 @@ function signIn() {
     { height: 60, width: 30, promptBeforeOpen: false },
     (asyncResult) => {
       if (asyncResult.status === Office.AsyncResultStatus.Failed) {
-        setStatus(`Could not open sign-in dialog: ${asyncResult.error.message}`);
+        setStatus(`Could not open sign-in dialog: ${asyncResult.error.message}`, 'error');
         return;
       }
       const dialog = asyncResult.value;
@@ -354,7 +356,7 @@ function signIn() {
           document.getElementById('signin-btn')!.style.display = 'none';
           lookupInstitution();
         } else {
-          setStatus(`Sign-in failed: ${data.message}`);
+          setStatus(`Sign-in failed: ${data.message}`, 'error');
         }
       });
       dialog.addEventHandler(Office.EventType.DialogEventReceived, () => {
@@ -388,18 +390,4 @@ Office.onReady((info) => {
   const signInBtn = document.getElementById('signin-btn') as HTMLButtonElement;
   signInBtn.style.display = 'inline-block';
   signInBtn.addEventListener('click', signIn);
-
-  // DEV ONLY: bypass the interactive sign-in dialog by pasting a token
-  // grabbed from the dashboard's own working MSAL login (app/page.tsx).
-  // Remove before any real demo — real flow is the Sign in button above.
-  const devBypassEl = document.getElementById('dev-bypass') as HTMLDivElement;
-  devBypassEl.style.display = 'block';
-  const devTokenInput = document.getElementById('dev-token-input') as HTMLInputElement;
-  const devTokenBtn = document.getElementById('dev-token-btn') as HTMLButtonElement;
-  devTokenBtn.addEventListener('click', () => {
-    const token = devTokenInput.value.trim();
-    if (!token) return;
-    accessToken = token;
-    lookupInstitution();
-  });
 });

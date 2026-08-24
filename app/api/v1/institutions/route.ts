@@ -28,6 +28,8 @@ export async function GET(request: NextRequest) {
   const tier = searchParams.get('tier');
   const healthStatus = searchParams.get('health_status');
   const country = searchParams.get('country');
+  const ownershipType = searchParams.get('ownership_type');
+  const partnershipFinalized = searchParams.get('partnership_finalized');
 
   const supabase = getSupabaseServer();
   let query = supabase.from('institutions_with_health').select('*').order('name', { ascending: true });
@@ -36,6 +38,8 @@ export async function GET(request: NextRequest) {
   if (tier) query = query.eq('tier', tier);
   if (healthStatus) query = query.eq('health_status', healthStatus);
   if (country) query = query.eq('country', country);
+  if (ownershipType) query = query.eq('ownership_type', ownershipType);
+  if (partnershipFinalized) query = query.eq('partnership_finalized', partnershipFinalized === 'true');
 
   const { data, error } = await query;
 
@@ -96,4 +100,43 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json(data, { status: 201, headers: corsHeaders() });
+}
+
+// DELETE /api/v1/institutions
+//
+// Purges every institution (and, via ON DELETE CASCADE, contacts/
+// interactions/follow-ups) belonging to the signed-in user only — a
+// self-serve reset for re-testing an import from scratch, without needing
+// a developer to run a script against the database directly. Scoped to
+// user_id, unlike the dev-only clean-all-data.mjs script.
+export async function DELETE(request: NextRequest) {
+  let claims;
+  try {
+    claims = await verifyBearerToken(request.headers.get('authorization'));
+  } catch (err) {
+    if (err instanceof TokenVerificationError) {
+      return NextResponse.json({ error: err.message }, { status: 401, headers: corsHeaders() });
+    }
+    throw err;
+  }
+
+  const userId = await resolveUserId(claims.oid as string);
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'No user record found for this token. Sign in via the dashboard first.' },
+      { status: 401, headers: corsHeaders() }
+    );
+  }
+
+  const supabase = getSupabaseServer();
+  const { error, count } = await supabase
+    .from('institutions')
+    .delete({ count: 'exact' })
+    .eq('user_id', userId);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders() });
+  }
+
+  return NextResponse.json({ deleted: count ?? 0 }, { status: 200, headers: corsHeaders() });
 }

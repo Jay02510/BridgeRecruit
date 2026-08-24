@@ -7,25 +7,129 @@
   <!-- Office.js must be loaded from the CDN, not bundled -->
   <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
   <style>
-    body { font-family: Segoe UI, sans-serif; margin: 12px; font-size: 14px; }
-    h1 { font-size: 18px; margin: 0 0 12px; }
-    #status { color: #666; }
-    button { padding: 8px 14px; font-size: 14px; cursor: pointer; }
-    #dev-bypass { margin-top: 12px; padding: 8px; border: 1px dashed #d97706; border-radius: 4px; background: #fffbeb; }
-    #dev-bypass label { display: block; font-size: 11px; color: #92400e; margin-bottom: 4px; }
-    #dev-token-input { width: 100%; box-sizing: border-box; font-size: 12px; padding: 4px; margin-bottom: 6px; }
-    #school-card { margin-top: 16px; padding: 12px; border: 1px solid #ddd; border-radius: 6px; display: none; }
-    #school-card h2 { font-size: 16px; margin: 0 0 4px; }
-    #school-card .meta { color: #666; font-size: 12px; margin-bottom: 8px; }
+    :root {
+      --blue-600: #2563eb;
+      --blue-700: #1d4ed8;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --green-700: #15803d;
+      --red-700: #b91c1c;
+      --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 16px;
+      font-size: 14px;
+      color: var(--gray-900);
+      line-height: 1.45;
+    }
+
+    h1 { font-size: 17px; font-weight: 600; margin: 0 0 12px; }
+    h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+
+    #status { color: var(--gray-500); transition: color 0.15s ease; margin-bottom: 4px; }
+    #status.success { color: var(--green-700); font-weight: 600; }
+    #status.error { color: var(--red-700); font-weight: 600; }
+    .success-message { color: var(--green-700); font-weight: 600; margin: 0; }
+
+    #sender-domain { color: var(--gray-500); font-size: 12px; margin-bottom: 12px; }
+
+    button {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background-color 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
+    }
+    button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    button:disabled { cursor: not-allowed; opacity: 0.55; }
+
+    #signin-btn,
+    #quick-create-form button[type="submit"],
+    #action-panel button[type="submit"] {
+      background: var(--blue-600);
+      color: #fff;
+      border-color: var(--blue-600);
+    }
+    #signin-btn:hover,
+    #quick-create-form button[type="submit"]:hover,
+    #action-panel button[type="submit"]:hover {
+      background: var(--blue-700);
+      border-color: var(--blue-700);
+    }
+
+    #quick-actions button {
+      background: var(--gray-100);
+      color: var(--gray-900);
+      border-color: var(--gray-200);
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+    #quick-actions button:hover { background: var(--gray-200); }
+
+    label { display: block; font-size: 12px; font-weight: 500; color: var(--gray-700); margin-bottom: 10px; }
+
+    input, textarea, select {
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 4px;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 7px 9px;
+      border: 1px solid var(--gray-300);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--gray-900);
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--blue-600);
+      box-shadow: var(--focus-ring);
+    }
+    input[type="checkbox"] { width: auto; margin-top: 0; vertical-align: middle; }
+    label.checkbox-label { display: flex; align-items: center; gap: 6px; font-weight: 400; }
+
+    #school-card {
+      margin-top: 16px;
+      padding: 12px;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      display: none;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+    #school-card .meta { color: var(--gray-500); font-size: 12px; margin-bottom: 8px; }
     #school-card ul { margin: 8px 0 0; padding-left: 18px; }
     #school-card li { margin-bottom: 6px; }
+
     #quick-actions { display: none; margin-top: 12px; }
-    #quick-actions button { margin-right: 6px; margin-bottom: 6px; }
-    #action-panel { margin-top: 10px; padding: 10px; border: 1px solid #eee; border-radius: 6px; }
-    #action-panel label { display: block; font-size: 12px; margin-bottom: 8px; }
-    #action-panel input, #action-panel textarea, #action-panel select { width: 100%; box-sizing: border-box; margin-top: 4px; }
-    #quick-create-form label { display: block; font-size: 12px; margin-bottom: 8px; }
-    #quick-create-form input, #quick-create-form select { width: 100%; box-sizing: border-box; margin-top: 4px; }
+
+    #action-panel {
+      margin-top: 10px;
+      padding: 12px;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      background: var(--gray-100);
+    }
+
+    #quick-create-form,
+    #log-email-form,
+    #log-visit-form,
+    #followup-form {
+      margin-top: 8px;
+    }
+
+    #ai-summary-status { color: var(--gray-500); font-size: 12px; }
   </style>
 </head>
 <body>
@@ -34,11 +138,6 @@
     <div id="status">Loading…</div>
     <div id="sender-domain"></div>
     <button id="signin-btn" style="display: none;">Sign in</button>
-    <div id="dev-bypass" style="display: none;">
-      <label for="dev-token-input">DEV ONLY: paste token from dashboard, skip sign-in dialog</label>
-      <input type="text" id="dev-token-input" placeholder="Bearer token" />
-      <button id="dev-token-btn">Use token</button>
-    </div>
     <div id="school-card"></div>
     <div id="quick-actions"></div>
   </div>

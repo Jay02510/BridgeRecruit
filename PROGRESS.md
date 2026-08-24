@@ -27,7 +27,8 @@ each phase; deviations are called out below, not silent.
 | 5 | AI features (thread summarization, re-engagement drafts) | ✅ Done (draft-reengagement has no UI yet — needs Phase 6's dashboard) |
 | 6 | Territory Management web dashboard | ✅ Done (table, Needs Attention, Kanban pipeline, CSV import/export) |
 | 7 | Stall/ghosting detection cron | ✅ Done |
-| 8 | Polish & demo prep | 🔵 In progress (code polish done; interactive sign-in fix still pending) |
+| 8 | Polish & demo prep | ✅ Done |
+| 9 | Client-driven QoL pass — legacy import, institution profiles, reports, calendar | ✅ Done |
 
 ## What Works Today (demoable)
 
@@ -45,10 +46,22 @@ each phase; deviations are called out below, not silent.
 - Basic Graph retry/backoff (`lib/graph/withRetry.ts`) wraps the calendar-push call — honors `Retry-After`, exponential backoff with jitter on 429/5xx.
 - `scripts/seed-demo-stalled.mjs` / `delete-demo-stalled.mjs`: adds/removes one clearly-labeled `[DEMO]` stalled institution so "Needs Attention" has something to show live — real client data has nothing past 30 days inactive yet.
 
+### Phase 9 additions (client feedback after first demo prep pass)
+
+- **Legacy spreadsheet import, rebuilt**: `/dashboard/institutions` → "Import Spreadsheet" now has two paths. A **named exact path** recognizes Julian's real "Korea Interactions" sheet by its actual headers (no guessing) and turns `Last Meeting`/`Last Contact`/`Next Steps` columns into real `interactions` and `tasks_followups` rows — not flattened notes — so `last_interaction_at`/health status are correct on day one instead of every import defaulting to stalled_cold. The preview screen also reports any column in the file the system doesn't recognize, so nothing is silently dropped. A **generic fuzzy-matched path** (with a mapping-confirmation screen, unmapped columns default to appending into Notes) handles any other sheet shape. The old exact-header-only CSV importer is removed entirely (was a strict subset of the new flow).
+- **Institution profile pages** (`/dashboard/institutions/[id]`): full record (address/notes, which the directory table doesn't show), contacts, complete interaction history, follow-ups. Editable in place (Edit button → Save via `PATCH`). Delete (single, with confirm) and bulk delete (checkboxes + toolbar) from the directory table. Table itself trimmed from 8 columns to 5 (Name/Location/Tier/Health/Last Interaction) — everything else lives on the profile instead of a wide scrolling table.
+- **Log Interaction directly from the dashboard**: profile page has its own "Log Interaction" form (channel/date/contact/subject/notes) hitting the same `/api/v1/interactions` endpoint the add-in uses — closes the gap where logging an in-person meeting required opening an unrelated email just to get the add-in's context card to appear.
+- **Reports** (`/dashboard/reports`): AI-generated (`gpt-4o-mini`) plain-language activity digest for leadership — headline, highlights, narrative, watch-list — grounded in real stats (new institutions, interactions by channel, follow-up completion, health distribution), not a raw export. Date-range presets + tier/country filters, always-visible stat tiles, in-place editing before copying, persists across refresh (localStorage).
+- **Calendar** (`/dashboard/calendar`): read-only week view of the real Outlook calendar via Graph (`Calendars.ReadWrite`, already-consented scope) — fetched live, not a stored copy. Events created via Set Follow-Up are labeled with the institution.
+- **Pipeline**: colored stage badges, CSV export of the current snapshot, an explanatory subtitle (it's every institution grouped by pipeline stage — confirmed, not something else).
+- **Purge**: self-serve "Clear all data…" on the institutions page (type-to-confirm), scoped to the signed-in user only — for re-testing an import from a clean slate without asking a developer to run a script.
+- **Nav**: shared `DashboardNav` across every dashboard page (was asymmetric back-links only), with Sign Out reachable from anywhere instead of only the home page.
+- Follow-up creation in the add-in now shows an explicit green success confirmation (previously silent — looked broken, matched a real client-reported pain point).
+
 ## Known Deviations From the Literal PRD (flagged, not silent)
 
 1. **API layer**: Next.js Route Handlers instead of a separate Fastify gateway — same endpoint paths/shapes, fewer moving parts for a solo MVP build. Easily split out later.
-2. **Interactive sign-in bypass (temporary, dev-only)**: the add-in's Office-dialog MSAL sign-in is currently unreliable on this dev machine (Korean banking-security software intercepting Chrome TLS, Safari dialog-navigation restrictions). A dev-only token-paste bypass in the taskpane unblocks feature testing. **Must be removed before any client-facing demo.**
+2. ~~**Interactive sign-in bypass (temporary, dev-only)**~~ — resolved. The Office-dialog MSAL flow was unreliable in Chrome (Korean banking-security software intercepting local TLS) and Safari (dialog-navigation domain restrictions), so a dev-only token-paste bypass unblocked feature testing. Confirmed working via the real `Sign in` button in desktop Outlook (dialog runs on Edge WebView2, sidestepping the Chrome-specific interception) — bypass code removed from `taskpane.ts`/`taskpane.html`.
 3. **`pipeline_stage` column**: PRD's Kanban view (FR-5.2) has no backing column in its own DDL — this is a gap in the spec, not a redesign. Added via `0002_pipeline_stage.sql`, applied manually through the Supabase SQL Editor (no CLI/DB connection available in this environment).
 4. **Stall-detection threshold source**: the PRD's `detectStalledPartnerships` reads a per-institution `reengagement_threshold_days` column, but nothing populates it away from the DB default of 14 for every tier. The cron computes the threshold from tier directly (10/18/30 days) instead of trusting that column — avoids silently applying the wrong urgency threshold to every institution.
 
@@ -61,13 +74,19 @@ each phase; deviations are called out below, not silent.
 
 ## Next Up
 
-Finish Phase 8: replace the temporary dev-token sign-in bypass with a
-working interactive Office dialog flow — the one remaining item before any
-real client-facing demo. This is the highest-risk remaining task: the last
-attempt hit environment-specific issues (Korean banking-security software
-intercepting Chrome TLS, Safari dialog domain restrictions) that ate
-significant session time before landing on the dev-token bypass as a
-stopgap. Time-box the next attempt.
+All phases done. Known open items, lowest priority first:
+
+- Contacts are not part of any import path yet (institutions/interactions/
+  follow-ups only) — a client whose sheet has real contact rows would need
+  that added.
+- No calendar-history backfill (only forward push + live read exist; past
+  events not already logged as interactions aren't pulled in).
+- No true report history (last report persists per-browser via
+  localStorage, not a shared/cross-device DB record).
+- Domain isn't editable from the dashboard (deliberately, since it drives
+  email auto-matching) — would need its own confirmation flow if requested.
+
+Otherwise: demo rehearsal / client-facing polish, not build items.
 
 ---
 

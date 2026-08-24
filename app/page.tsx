@@ -1,19 +1,14 @@
 'use client';
 
-import { useState } from 'react';
 import { useMsal, useIsAuthenticated } from '@azure/msal-react';
 import { apiLoginRequest, graphConsentRequest, calendarConsentRequest } from '@/lib/msal/config';
+import { DashboardNav } from '@/components/dashboard-nav';
 
 export default function Home() {
   const { instance, accounts } = useMsal();
   const isAuthenticated = useIsAuthenticated();
-  const [meResult, setMeResult] = useState<unknown>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [devToken, setDevToken] = useState<string | null>(null);
 
   async function handleLogin() {
-    setError(null);
     // Redirect flow instead of popup: more reliable across browsers (some,
     // like Safari/Arc, have strict popup-window policies that break
     // popup-based OAuth). This navigates away and back; AppMsalProvider's
@@ -21,12 +16,7 @@ export default function Home() {
     await instance.loginRedirect(apiLoginRequest);
   }
 
-  async function handleLogout() {
-    await instance.logoutRedirect();
-  }
-
   async function handleGrantGraphAccess() {
-    setError(null);
     // Incremental consent: separate single-resource request for the Graph
     // scope, reusing the existing signed-in session (account passed in) so
     // this only prompts for consent, not a full re-login.
@@ -34,120 +24,59 @@ export default function Home() {
   }
 
   async function handleGrantCalendarAccess() {
-    setError(null);
     await instance.acquireTokenRedirect({ ...calendarConsentRequest, account: accounts[0] });
   }
 
-  async function callMe() {
-    setLoading(true);
-    setError(null);
-    setMeResult(null);
-    try {
-      const account = accounts[0];
-      const tokenResult = await instance.acquireTokenSilent({
-        ...apiLoginRequest,
-        account,
-      });
-      setDevToken(tokenResult.accessToken);
-      const res = await fetch('/api/v1/me', {
-        headers: { Authorization: `Bearer ${tokenResult.accessToken}` },
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setError(`API error (${res.status}): ${JSON.stringify(json)}`);
-      } else {
-        setMeResult(json);
-      }
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <main className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-2xl font-semibold">BridgeRecruit — Phase 3 Auth Test</h1>
-
-      {!isAuthenticated ? (
+  if (!isAuthenticated) {
+    return (
+      <main className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h1 className="text-3xl font-semibold">BridgeRecruit</h1>
+          <p className="text-gray-600 dark:text-gray-400 max-w-md">
+            Inbox-native CRM for school partnership recruiting. Sign in with your Microsoft
+            account to see institution health, log touchpoints, and manage follow-ups.
+          </p>
+        </div>
         <button
           onClick={handleLogin}
           className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
         >
           Sign in with Microsoft
         </button>
-      ) : (
-        <div className="flex flex-col items-center gap-4">
-          <p>Signed in as {accounts[0]?.username}</p>
-          <div className="flex gap-3">
-            <a
-              href="/dashboard/institutions"
-              className="rounded bg-slate-700 px-4 py-2 text-white hover:bg-slate-800"
-            >
-              Institutions Dashboard
-            </a>
-            <a
-              href="/dashboard/needs-attention"
-              className="rounded bg-slate-700 px-4 py-2 text-white hover:bg-slate-800"
-            >
-              Needs Attention
-            </a>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handleGrantGraphAccess}
-              className="rounded bg-purple-600 px-4 py-2 text-white hover:bg-purple-700"
-            >
-              1. Grant Graph Access
-            </button>
-            <button
-              onClick={handleGrantCalendarAccess}
-              className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-            >
-              1b. Grant Calendar Access
-            </button>
-            <button
-              onClick={callMe}
-              disabled={loading}
-              className="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:opacity-50"
-            >
-              {loading ? 'Calling /api/v1/me…' : '2. Test /api/v1/me (OBO + Graph)'}
-            </button>
-            <button
-              onClick={handleLogout}
-              className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-      )}
+      </main>
+    );
+  }
 
-      {error && (
-        <pre className="max-w-2xl whitespace-pre-wrap rounded bg-red-50 p-4 text-sm text-red-800">
-          {error}
-        </pre>
-      )}
+  return (
+    <main className="flex-1 flex flex-col gap-6 p-8 max-w-3xl mx-auto w-full">
+      <DashboardNav />
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Signed in as {accounts[0]?.username}
+      </p>
 
-      {typeof meResult !== 'undefined' && meResult !== null ? (
-        <pre className="max-w-2xl whitespace-pre-wrap rounded bg-gray-50 p-4 text-sm text-gray-900">
-          {JSON.stringify(meResult, null, 2)}
-        </pre>
-      ) : null}
-
-      {devToken && (
-        <div className="w-full max-w-2xl">
-          <p className="text-sm font-semibold text-amber-700">
-            DEV ONLY — paste this into the add-in taskpane&apos;s dev bypass field (expires in ~1hr):
+      <div className="rounded border border-gray-200 dark:border-gray-700 p-4 flex flex-col gap-3">
+        <div>
+          <p className="font-medium text-sm">Microsoft Graph access</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            One-time setup: grant access so the add-in can read email context and sync follow-ups
+            to your Outlook Calendar.
           </p>
-          <textarea
-            readOnly
-            value={devToken}
-            onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-            className="mt-2 h-24 w-full rounded border border-amber-300 bg-amber-50 p-2 text-xs text-gray-900"
-          />
         </div>
-      )}
+        <div className="flex gap-3">
+          <button
+            onClick={handleGrantGraphAccess}
+            className="rounded bg-purple-600 px-3 py-1.5 text-sm text-white hover:bg-purple-700"
+          >
+            Grant Graph Access
+          </button>
+          <button
+            onClick={handleGrantCalendarAccess}
+            className="rounded bg-indigo-600 px-3 py-1.5 text-sm text-white hover:bg-indigo-700"
+          >
+            Grant Calendar Access
+          </button>
+        </div>
+      </div>
     </main>
   );
 }
