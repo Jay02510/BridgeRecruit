@@ -71,7 +71,7 @@ each phase; deviations are called out below, not silent.
 
 - **2026-08-24 audit**: every Supabase-touching route was missing app-layer `user_id` scoping — any authenticated user could read/edit/delete another user's institutions, interactions, and follow-ups. Fixed across institutions (list/lookup/detail/export/import), interactions, follow-ups, draft-reengagement, and generate-report. `institutions.domain`'s uniqueness constraint was also global instead of per-user (`0004_scope_domain_unique_per_user.sql`).
 - **2026-08-25 hardening pass**: CSV formula-injection escaping on the institutions export (a `=`/`+`/`-`/`@`-leading cell opens as a formula in Excel/Sheets); HTML-escaping added to every dynamically-rendered field in the Outlook add-in taskpane (`innerHTML` templates previously interpolated institution/contact/interaction text and the sender's email domain unescaped).
-- **Outstanding**: migration `0004_scope_domain_unique_per_user.sql` needs manual application via the Supabase SQL Editor (no CLI/DB connection in this environment, same constraint as 0002/0003) — confirm it's been run before treating the domain-uniqueness fix as live.
+- Migration `0004_scope_domain_unique_per_user.sql` applied manually via the Supabase SQL Editor (2026-08-25, same no-CLI constraint as 0002/0003) — domain-uniqueness fix is live.
 
 ## Environment Notes (for resuming this project)
 
