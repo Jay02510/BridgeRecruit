@@ -1,8 +1,8 @@
 // Fuzzy column-name matching for the "legacy spreadsheet" institution import.
 //
 // A client's own sheet almost never uses our schema's field names verbatim
-// (e.g. Julian's real sample sheet has "Name (University or School)", not
-// "name"). This maps arbitrary header text to our known fields by alias
+// (e.g. a partner-tracking sample sheet might have "Name (University or
+// School)", not "name"). This maps arbitrary header text to our known fields by alias
 // first, then loose token/substring similarity, always below user
 // confirmation — never auto-committed without review.
 

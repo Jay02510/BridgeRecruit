@@ -1,0 +1,94 @@
+BridgeRecruit — Portfolio Summary
+==================================
+
+WHAT IT IS
+----------
+Inbox-native admissions CRM for international-recruitment teams. An Outlook
+Add-in surfaces institution context directly inside email, logs every
+touchpoint (email / visit / fair / phone call), and pushes follow-ups
+straight to the recruiter's Outlook Calendar with an auto-generated
+Pre-Meeting Brief. A companion web dashboard covers institution management,
+a pipeline Kanban board, stall/re-engagement detection, AI-generated
+leadership reports, and a live calendar view.
+
+Solo end-to-end build, from a PRD-style spec (persona, JTBD, DDL, API
+shapes, LLM prompts, edge-case matrix, acceptance tests) through 9
+implementation phases plus a dedicated security-hardening pass. All demo
+data is fictional (supabase/seed.sql).
+
+FULL STACK
+----------
+Frontend:      Next.js 16 (App Router, TypeScript), React 19, Tailwind CSS 4
+Backend:       Next.js Route Handlers as a REST API (TypeScript)
+Database:      Supabase (Postgres) — RLS policies, DB triggers/generated
+               columns for health-status scoring, SQL migrations
+Auth:          Microsoft Entra ID (Azure AD) via MSAL, OAuth 2.0
+               On-Behalf-Of token exchange, JWT verification (jose) against
+               Microsoft's JWKS endpoint
+Integrations:  Microsoft Graph API (Calendar, delegated scopes), Office.js
+               (Outlook Add-in / taskpane), OpenAI API (Structured Outputs,
+               gpt-4o-mini) for thread summarization, re-engagement drafts,
+               and AI-generated activity reports
+Other:         Zod (schema validation), ExcelJS / PapaParse (spreadsheet
+               import), dnd-kit (drag-and-drop Kanban), Vercel Cron
+               (scheduled stall-detection job), Webpack (add-in bundling)
+Hosting:       Vercel (app), Supabase Cloud (database)
+
+RESUME BULLET POINTS
+---------------------
+- Built and shipped a full-stack, multi-tenant SaaS CRM (Next.js/TypeScript,
+  Supabase/Postgres, Microsoft Graph, OpenAI) end-to-end from a written
+  product spec across 9 phases, including a live Outlook Add-in built on
+  Office.js.
+
+- Implemented Microsoft Entra ID authentication using the OAuth 2.0
+  On-Behalf-Of flow to exchange an Office Add-in's token for a
+  Graph-scoped API token, plus independent JWT verification (signature,
+  audience, issuer) against Microsoft's public JWKS on every API route.
+
+- Integrated the Microsoft Graph API for delegated Calendar read/write,
+  including incremental consent handling and retry/backoff with jitter for
+  rate-limited and transient failures.
+
+- Integrated OpenAI's Structured Outputs API (strict JSON schema mode) for
+  three production features: email-thread summarization, AI-drafted
+  re-engagement emails, and a leadership activity digest — with a
+  rule-based fallback path for low-signal inputs.
+
+- Designed a Postgres schema with a DB-trigger-driven generated column for
+  automated relationship-health scoring (active / cooling / stalled),
+  keeping the UI always consistent with the underlying interaction
+  timeline without application-layer recomputation.
+
+- Ran a self-directed security audit across every database-touching API
+  route: found that Postgres RLS policies were inert (server routes use
+  the service-role key) and that authorization actually depended on
+  per-route `user_id` filtering, which was missing in several places —
+  fixed the gap, added a per-user-scoped uniqueness constraint, CSV
+  formula-injection escaping on data export, and HTML-escaping on
+  dynamically rendered add-in content.
+
+- Built a two-path spreadsheet import system: an exact-header fast path for
+  a recognized legacy sheet format, and a fuzzy column-matching fallback
+  with a user-confirmed mapping screen for arbitrary spreadsheet shapes —
+  turning free-text notes into structured, queryable interaction records.
+
+- Diagnosed and resolved a multi-layered OAuth sign-in failure spanning OS
+  certificate trust, a third-party security tool intercepting local TLS in
+  one browser, and Office Add-in dialog domain allowlisting — isolated each
+  layer independently rather than guessing at a fix.
+
+TALKING POINTS (for interviews)
+--------------------------------
+- Why On-Behalf-Of instead of a session cookie: an Office Add-in taskpane
+  is a small embedded webview, not a full app shell, so a bearer-token API
+  (verified independently per request) made more sense than server-side
+  session state.
+- Why RLS *and* app-layer scoping: RLS is real defense-in-depth against a
+  future code path that stops using the service-role key, but it can't be
+  relied on alone if every current route bypasses it — worth explaining the
+  distinction between "policy exists" and "policy is enforced."
+- The generated-column health-status trigger vs. computing it in the API
+  layer: keeps every consumer (dashboard, add-in, cron job, CSV export)
+  automatically consistent with one source of truth instead of
+  re-implementing the same decay logic in multiple places.

@@ -41,6 +41,13 @@ yarn-error.log*
 # vercel
 .vercel
 
+# real client materials — never commit, keep local-only
+TalkFile_*
+University App*Persona*
+University App*Journey Mapping*
+*.xlsx
+*.pdf
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

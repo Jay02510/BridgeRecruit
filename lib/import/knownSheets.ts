@@ -1,14 +1,14 @@
-// Named import path for Julian's actual "Korea Interactions" partner sheet.
+// Named import path for a recognized "Korea Interactions"-style partner
+// tracking sheet (a common export shape from spreadsheet-based partner
+// tracking).
 //
-// Unlike the generic fuzzy mapper (mapping.ts), this isn't guessing — we
-// have his real file and know its exact headers (see the original
-// scripts/seed-client-sample.mjs, which this ports into a real upload
-// path). When his sheet's shape is detected, columns map exactly and his
-// "Last Meeting" / "Last Contact" / "Next Steps" columns become real
-// interaction and follow-up rows instead of flattened notes text — which
-// also means last_interaction_at gets set (via the DB trigger on insert),
-// so imported institutions read their true health status on day one
-// instead of defaulting to stalled_cold.
+// Unlike the generic fuzzy mapper (mapping.ts), this isn't guessing — the
+// exact header set is known up front. When a sheet's shape is detected,
+// columns map exactly and its "Last Meeting" / "Last Contact" / "Next
+// Steps" columns become real interaction and follow-up rows instead of
+// flattened notes text — which also means last_interaction_at gets set
+// (via the DB trigger on insert), so imported institutions read their true
+// health status on day one instead of defaulting to stalled_cold.
 
 const H = {
   name: 'Name (University or School)',
@@ -30,14 +30,14 @@ const H = {
   nextStepsComments: 'Next Steps or Comments',
 } as const;
 
-// A handful of his headers are enough to recognize the sheet; we don't
-// require every column present (he may trim or reorder columns).
+// A handful of headers are enough to recognize the sheet; not every column
+// needs to be present (columns may be trimmed or reordered).
 const SIGNATURE_HEADERS = [H.name, H.lastMeetingDetails, H.lastContactDetails];
 
-export function detectKnownSheet(headers: string[]): 'julian-partner-interactions' | null {
+export function detectKnownSheet(headers: string[]): 'korea-interactions-partner-log' | null {
   const set = new Set(headers.map((h) => h.trim()));
   const hits = SIGNATURE_HEADERS.filter((h) => set.has(h)).length;
-  return hits >= 2 ? 'julian-partner-interactions' : null;
+  return hits >= 2 ? 'korea-interactions-partner-log' : null;
 }
 
 const KNOWN_HEADERS = new Set<string>(Object.values(H));

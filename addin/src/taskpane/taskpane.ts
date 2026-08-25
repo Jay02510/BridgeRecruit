@@ -27,6 +27,18 @@ function authHeaders(): HeadersInit {
   return { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
 }
 
+// Institution/contact/interaction text is free-form (spreadsheet import, quick-create
+// form) and the sender domain comes off the open email — none of it is trustworthy
+// enough to interpolate into innerHTML unescaped.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function setStatus(text: string, tone: 'neutral' | 'success' | 'error' = 'neutral') {
   const el = document.getElementById('status')!;
   el.textContent = text;
@@ -41,9 +53,9 @@ function renderQuickCreateForm() {
   const guessedName = senderDomain.split('.')[0].replace(/-/g, ' ');
   cardEl.style.display = 'block';
   cardEl.innerHTML = `
-    <p>No institution found for <strong>${senderDomain}</strong>.</p>
+    <p>No institution found for <strong>${escapeHtml(senderDomain)}</strong>.</p>
     <form id="quick-create-form">
-      <label>Name<input type="text" id="qc-name" value="${guessedName}" required /></label>
+      <label>Name<input type="text" id="qc-name" value="${escapeHtml(guessedName)}" required /></label>
       <label>City<input type="text" id="qc-city" required /></label>
       <label>Type
         <select id="qc-type">
@@ -302,16 +314,16 @@ function renderSchoolCard(data: LookupResponse) {
 
   const inst = data.institution;
   const contactLine = data.contact
-    ? `${data.contact.name}${data.contact.title ? ` — ${data.contact.title}` : ''}`
+    ? `${escapeHtml(data.contact.name)}${data.contact.title ? ` — ${escapeHtml(data.contact.title)}` : ''}`
     : 'No primary contact on file';
   const interactionItems = data.recent_interactions
-    .map((i) => `<li><strong>${i.subject}</strong> (${new Date(i.interaction_date).toLocaleDateString()})<br/>${i.summary.slice(0, 140)}</li>`)
+    .map((i) => `<li><strong>${escapeHtml(i.subject)}</strong> (${new Date(i.interaction_date).toLocaleDateString()})<br/>${escapeHtml(i.summary.slice(0, 140))}</li>`)
     .join('');
 
   cardEl.style.display = 'block';
   cardEl.innerHTML = `
-    <h2>${inst.name}</h2>
-    <div class="meta">${inst.tier.replace(/_/g, ' ')} · ${inst.city}, ${inst.country} · ${inst.health_status.replace(/_/g, ' ')}</div>
+    <h2>${escapeHtml(inst.name)}</h2>
+    <div class="meta">${escapeHtml(inst.tier.replace(/_/g, ' '))} · ${escapeHtml(inst.city)}, ${escapeHtml(inst.country)} · ${escapeHtml(inst.health_status.replace(/_/g, ' '))}</div>
     <div>${contactLine}</div>
     <ul>${interactionItems || '<li>No logged interactions yet.</li>'}</ul>
   `;

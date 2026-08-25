@@ -5,6 +5,12 @@ Add-in that surfaces institution context inline in email, logs every
 touchpoint (email/visit/fair/call), and pushes follow-ups straight to the
 recruiter's Outlook Calendar with an auto-generated Pre-Meeting Brief.
 
+Personal portfolio build — implemented end-to-end from a PRD-style spec
+(persona, DDL, API shapes, LLM prompts) to demonstrate a full inbox-native
+SaaS integration: Microsoft Graph OAuth (On-Behalf-Of), a live Outlook
+Add-in, and an authenticated multi-tenant Next.js/Supabase backend. All
+data shown when running it is fictional seed data — see `supabase/seed.sql`.
+
 See [PROGRESS.md](./PROGRESS.md) for phase status, architecture notes,
 known deviations from the spec, and portfolio/resume talking points.
 

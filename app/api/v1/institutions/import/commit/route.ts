@@ -15,7 +15,7 @@ export async function OPTIONS() {
 // POST /api/v1/institutions/import/commit
 //
 // Two paths:
-// 1. Known sheet (currently: Julian's "Korea Interactions" export) — exact
+// 1. Known sheet (currently: a "Korea Interactions"-style export) — exact
 //    named columns, and "Last Meeting"/"Last Contact"/"Next Steps" become
 //    real interactions/follow-ups instead of flattened notes text. This is
 //    what makes last_interaction_at (and therefore health_status) correct

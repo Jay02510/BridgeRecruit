@@ -1,8 +1,9 @@
 # BridgeRecruit — Project Status
 
-Inbox-native admissions CRM. Outlook Add-in + web dashboard + AI, built against
-a real client PRD and real client sample data (Korea-based university/school
-partnerships).
+Inbox-native admissions CRM. Outlook Add-in + web dashboard + AI, built as a
+solo portfolio project against a PRD-style spec (persona, DDL, API shapes,
+LLM prompts) modeled on a Korea-based university/school partnerships
+workflow. All seed/demo data is fictional — see `supabase/seed.sql`.
 
 **Stack**: Next.js (TypeScript, App Router, Route Handlers as REST API) ·
 Supabase (Postgres) · Microsoft Entra ID (MSAL) OAuth + On-Behalf-Of ·
@@ -28,7 +29,7 @@ each phase; deviations are called out below, not silent.
 | 6 | Territory Management web dashboard | ✅ Done (table, Needs Attention, Kanban pipeline, CSV import/export) |
 | 7 | Stall/ghosting detection cron | ✅ Done |
 | 8 | Polish & demo prep | ✅ Done |
-| 9 | Client-driven QoL pass — legacy import, institution profiles, reports, calendar | ✅ Done |
+| 9 | QoL pass — legacy import, institution profiles, reports, calendar | ✅ Done |
 
 ## What Works Today (demoable)
 
@@ -37,18 +38,18 @@ each phase; deviations are called out below, not silent.
 - Unmatched sender domain → 1-click quick-create institution form (FR-1.1).
 - Log Email Touchpoint / Log Visit-Meeting → writes to `interactions`, auto-updates institution health status via DB trigger (FR-2.1/2.2).
 - Set Follow-Up → creates a `tasks_followups` row **and** a real Outlook Calendar event via Graph, with a Pre-Meeting Brief body (school tier, last 3 touchpoints, counselor preferences) (FR-3.1/3.2).
-- Real client sample data seeded from `TalkFile_Julian_Partner Interactions-sample.xlsx` (3 institutions, 1 contact, 6 interactions, 3 follow-ups) — replaced earlier placeholder seed data entirely.
+- Fictional sample data seeded via `supabase/seed.sql` (institutions across all 3 tiers, contacts, interactions, follow-ups) — replaced earlier placeholder seed data entirely.
 - Log Email Touchpoint now runs a real OpenAI-powered thread summary (strict JSON schema) instead of a manual stub, with a <15-word fallback per the PRD's LLM resilience guardrail (FR-2.1 + Phase 5).
 - `POST /api/v1/ai/draft-reengagement` generates a warm re-engagement email draft for stalled institutions — endpoint works, awaiting a Phase 6 UI to call it from.
 - Web dashboard: `/dashboard/institutions` (searchable/filterable directory + CSV import/export), `/dashboard/needs-attention` (stalled institutions, one-click AI re-engagement draft + copy-to-clipboard), and `/dashboard/pipeline` (drag-and-drop Kanban across the PRD's 5 pipeline stages). All sign in via the same MSAL flow as the home page.
 - Nightly stall-detection cron (`GET /api/v1/cron/detect-stalled`, `vercel.json`): tier-aware decay scoring per the PRD's business rules, auto-creates `is_stalled_reengagement` follow-up tasks, idempotent across runs.
 - `institutions.ownership_type` / `partnership_finalized`: two client Excel columns that had no home in the schema before, now flow through create/update/CSV import-export and the institutions table UI.
 - Basic Graph retry/backoff (`lib/graph/withRetry.ts`) wraps the calendar-push call — honors `Retry-After`, exponential backoff with jitter on 429/5xx.
-- `scripts/seed-demo-stalled.mjs` / `delete-demo-stalled.mjs`: adds/removes one clearly-labeled `[DEMO]` stalled institution so "Needs Attention" has something to show live — real client data has nothing past 30 days inactive yet.
+- `scripts/seed-demo-stalled.mjs` / `delete-demo-stalled.mjs`: adds/removes one clearly-labeled `[DEMO]` stalled institution so "Needs Attention" has something to show live — the fictional seed data has nothing past 30 days inactive yet.
 
-### Phase 9 additions (client feedback after first demo prep pass)
+### Phase 9 additions (QoL pass after first demo prep pass)
 
-- **Legacy spreadsheet import, rebuilt**: `/dashboard/institutions` → "Import Spreadsheet" now has two paths. A **named exact path** recognizes Julian's real "Korea Interactions" sheet by its actual headers (no guessing) and turns `Last Meeting`/`Last Contact`/`Next Steps` columns into real `interactions` and `tasks_followups` rows — not flattened notes — so `last_interaction_at`/health status are correct on day one instead of every import defaulting to stalled_cold. The preview screen also reports any column in the file the system doesn't recognize, so nothing is silently dropped. A **generic fuzzy-matched path** (with a mapping-confirmation screen, unmapped columns default to appending into Notes) handles any other sheet shape. The old exact-header-only CSV importer is removed entirely (was a strict subset of the new flow).
+- **Legacy spreadsheet import, rebuilt**: `/dashboard/institutions` → "Import Spreadsheet" now has two paths. A **named exact path** recognizes a "Korea Interactions"-style partner-tracking sheet by its known headers (no guessing) and turns `Last Meeting`/`Last Contact`/`Next Steps` columns into real `interactions` and `tasks_followups` rows — not flattened notes — so `last_interaction_at`/health status are correct on day one instead of every import defaulting to stalled_cold. The preview screen also reports any column in the file the system doesn't recognize, so nothing is silently dropped. A **generic fuzzy-matched path** (with a mapping-confirmation screen, unmapped columns default to appending into Notes) handles any other sheet shape. The old exact-header-only CSV importer is removed entirely (was a strict subset of the new flow).
 - **Institution profile pages** (`/dashboard/institutions/[id]`): full record (address/notes, which the directory table doesn't show), contacts, complete interaction history, follow-ups. Editable in place (Edit button → Save via `PATCH`). Delete (single, with confirm) and bulk delete (checkboxes + toolbar) from the directory table. Table itself trimmed from 8 columns to 5 (Name/Location/Tier/Health/Last Interaction) — everything else lives on the profile instead of a wide scrolling table.
 - **Log Interaction directly from the dashboard**: profile page has its own "Log Interaction" form (channel/date/contact/subject/notes) hitting the same `/api/v1/interactions` endpoint the add-in uses — closes the gap where logging an in-person meeting required opening an unrelated email just to get the add-in's context card to appear.
 - **Reports** (`/dashboard/reports`): AI-generated (`gpt-4o-mini`) plain-language activity digest for leadership — headline, highlights, narrative, watch-list — grounded in real stats (new institutions, interactions by channel, follow-up completion, health distribution), not a raw export. Date-range presets + tier/country filters, always-visible stat tiles, in-place editing before copying, persists across refresh (localStorage).
@@ -56,7 +57,7 @@ each phase; deviations are called out below, not silent.
 - **Pipeline**: colored stage badges, CSV export of the current snapshot, an explanatory subtitle (it's every institution grouped by pipeline stage — confirmed, not something else).
 - **Purge**: self-serve "Clear all data…" on the institutions page (type-to-confirm), scoped to the signed-in user only — for re-testing an import from a clean slate without asking a developer to run a script.
 - **Nav**: shared `DashboardNav` across every dashboard page (was asymmetric back-links only), with Sign Out reachable from anywhere instead of only the home page.
-- Follow-up creation in the add-in now shows an explicit green success confirmation (previously silent — looked broken, matched a real client-reported pain point).
+- Follow-up creation in the add-in now shows an explicit green success confirmation (previously silent — looked broken, a real usability pain point).
 
 ## Known Deviations From the Literal PRD (flagged, not silent)
 
@@ -64,6 +65,13 @@ each phase; deviations are called out below, not silent.
 2. ~~**Interactive sign-in bypass (temporary, dev-only)**~~ — resolved. The Office-dialog MSAL flow was unreliable in Chrome (Korean banking-security software intercepting local TLS) and Safari (dialog-navigation domain restrictions), so a dev-only token-paste bypass unblocked feature testing. Confirmed working via the real `Sign in` button in desktop Outlook (dialog runs on Edge WebView2, sidestepping the Chrome-specific interception) — bypass code removed from `taskpane.ts`/`taskpane.html`.
 3. **`pipeline_stage` column**: PRD's Kanban view (FR-5.2) has no backing column in its own DDL — this is a gap in the spec, not a redesign. Added via `0002_pipeline_stage.sql`, applied manually through the Supabase SQL Editor (no CLI/DB connection available in this environment).
 4. **Stall-detection threshold source**: the PRD's `detectStalledPartnerships` reads a per-institution `reengagement_threshold_days` column, but nothing populates it away from the DB default of 14 for every tier. The cron computes the threshold from tier directly (10/18/30 days) instead of trusting that column — avoids silently applying the wrong urgency threshold to every institution.
+5. **RLS is inert by design, app layer is the real boundary**: server routes use the Supabase service-role key (bypasses RLS entirely), so multi-tenant isolation depends on every route filtering by the caller's `user_id` — see the Security section below for the audit that caught this.
+
+## Security
+
+- **2026-08-24 audit**: every Supabase-touching route was missing app-layer `user_id` scoping — any authenticated user could read/edit/delete another user's institutions, interactions, and follow-ups. Fixed across institutions (list/lookup/detail/export/import), interactions, follow-ups, draft-reengagement, and generate-report. `institutions.domain`'s uniqueness constraint was also global instead of per-user (`0004_scope_domain_unique_per_user.sql`).
+- **2026-08-25 hardening pass**: CSV formula-injection escaping on the institutions export (a `=`/`+`/`-`/`@`-leading cell opens as a formula in Excel/Sheets); HTML-escaping added to every dynamically-rendered field in the Outlook add-in taskpane (`innerHTML` templates previously interpolated institution/contact/interaction text and the sender's email domain unescaped).
+- **Outstanding**: migration `0004_scope_domain_unique_per_user.sql` needs manual application via the Supabase SQL Editor (no CLI/DB connection in this environment, same constraint as 0002/0003) — confirm it's been run before treating the domain-uniqueness fix as live.
 
 ## Environment Notes (for resuming this project)
 
@@ -86,7 +94,7 @@ All phases done. Known open items, lowest priority first:
 - Domain isn't editable from the dashboard (deliberately, since it drives
   email auto-matching) — would need its own confirmation flow if requested.
 
-Otherwise: demo rehearsal / client-facing polish, not build items.
+Otherwise: demo rehearsal / presentation polish, not build items.
 
 ---
 
@@ -96,7 +104,7 @@ Talking points for this project, kept here so they survive context resets:
 
 - Built an inbox-native CRM integrating Microsoft Graph (OAuth On-Behalf-Of
   flow, delegated Calendar API) into a live Outlook Add-in (Office.js),
-  end-to-end from a real client PRD and real client sample data.
+  end-to-end from a PRD-style spec (persona, DDL, API shapes, LLM prompts).
 - Diagnosed and resolved a multi-layered environment failure blocking OAuth
   sign-in: OS-level cert trust chain, a third-party security tool silently
   intercepting TLS in one browser, and Office add-in dialog domain
@@ -109,3 +117,10 @@ Talking points for this project, kept here so they survive context resets:
   the original 20+ page PRD (DDL, API contracts, prompt specs); found and
   fixed a real gap between implementation and spec (missing counselor
   preferences in the auto-generated meeting brief) via that process.
+- Ran a security pass across every Supabase-touching route: RLS policies
+  exist but are inert (server routes use the service-role key), so caught
+  and fixed missing app-layer `user_id` scoping that would have let any
+  authenticated user read/edit/delete another user's institutions —
+  plus a per-user-scoped domain-uniqueness constraint, CSV
+  formula-injection escaping on export, and HTML-escaping on the
+  Outlook add-in's dynamically rendered fields.

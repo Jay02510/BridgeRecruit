@@ -25,7 +25,11 @@ const CSV_COLUMNS = [
 
 function toCsvValue(value: unknown): string {
   if (value === null || value === undefined) return '';
-  const str = String(value);
+  let str = String(value);
+  // Neutralize CSV/formula injection: a leading =, +, -, or @ is interpreted
+  // as a formula by Excel/Sheets when this file is opened, and institution
+  // name/domain/city are free-form user input.
+  if (/^[=+\-@]/.test(str)) str = `'${str}`;
   return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
 }
 
