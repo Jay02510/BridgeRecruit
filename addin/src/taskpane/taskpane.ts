@@ -1,6 +1,6 @@
 /* global Office, document */
 
-const API_BASE_URL = 'https://localhost:3000';
+const API_BASE_URL = 'https://bridgerecruit.vercel.app';
 const DASHBOARD_URL = `${API_BASE_URL}/dashboard/institutions`;
 
 interface LookupResponse {
@@ -19,6 +19,7 @@ interface LookupResponse {
 
 let accessToken: string | null = null;
 let senderDomain = '';
+let senderEmail = '';
 let emailSubject = '';
 let currentInstitutionId: string | null = null;
 let currentContactId: string | null = null;
@@ -107,51 +108,91 @@ function renderQuickActions() {
   const actionsEl = document.getElementById('quick-actions')!;
   actionsEl.style.display = 'block';
   actionsEl.innerHTML = `
-    <button id="log-email-btn">Log Email Touchpoint</button>
-    <button id="log-visit-btn">Log Interaction</button>
+    <button id="log-touchpoint-btn">Log Touchpoint</button>
     <button id="followup-btn">Set Follow-Up</button>
     <div id="action-panel"></div>
   `;
-  document.getElementById('log-email-btn')!.addEventListener('click', renderLogEmailPanel);
-  document.getElementById('log-visit-btn')!.addEventListener('click', renderLogVisitPanel);
+  document.getElementById('log-touchpoint-btn')!.addEventListener('click', renderLogTouchpointPanel);
   document.getElementById('followup-btn')!.addEventListener('click', renderFollowupPanel);
 }
 
-function renderLogEmailPanel() {
+// Merged Log Email + Log Interaction: same form, "Email" is just the
+// channel option that gets an AI-summary assist since the open message's
+// body is right there. Every channel still logs against the currently
+// matched institution regardless of what's open in the reading pane.
+function renderLogTouchpointPanel() {
   const panel = document.getElementById('action-panel')!;
   panel.innerHTML = `
-    <div id="ai-summary-status">Generating AI summary…</div>
-    <form id="log-email-form" style="display: none;">
-      <label>Summary (AI-generated — edit as needed)
-        <textarea id="email-summary" rows="3" required></textarea>
+    <form id="log-touchpoint-form">
+      <label>Channel
+        <select id="touchpoint-channel">
+          <option value="email">Email</option>
+          <option value="in_person_visit">In-person visit</option>
+          <option value="fair_booth">Fair / booth</option>
+          <option value="virtual_meeting">Virtual meeting</option>
+          <option value="phone_call">Phone call</option>
+        </select>
+      </label>
+      <div id="ai-summary-row">
+        <button type="button" id="ai-summary-btn">Regenerate AI summary</button>
+        <div id="ai-summary-status"></div>
+      </div>
+      <label>Notes
+        <textarea id="touchpoint-notes" rows="3" required></textarea>
       </label>
       <div id="ai-action-item" style="font-size: 12px; color: var(--gray-700); margin-bottom: 8px;"></div>
+      <label>Materials shared (comma-separated)
+        <input type="text" id="touchpoint-materials" />
+      </label>
       <button type="submit">Save</button>
     </form>
   `;
 
   let threadText = '';
+  const channelSelect = document.getElementById('touchpoint-channel') as HTMLSelectElement;
+  const aiSummaryRow = document.getElementById('ai-summary-row')!;
+
+  function syncAiSummaryVisibility() {
+    aiSummaryRow.style.display = channelSelect.value === 'email' ? 'block' : 'none';
+  }
+  syncAiSummaryVisibility();
+  channelSelect.addEventListener('change', syncAiSummaryVisibility);
+
+  document.getElementById('ai-summary-btn')!.addEventListener('click', () => populateAiSummary(threadText));
+
   const item = Office.context.mailbox.item!;
   item.body.getAsync(Office.CoercionType.Text, async (result) => {
     threadText = result.status === Office.AsyncResultStatus.Succeeded ? result.value : '';
-    await populateAiSummary(threadText);
+    if (channelSelect.value === 'email') await populateAiSummary(threadText);
   });
 
-  document.getElementById('log-email-form')!.addEventListener('submit', async (e) => {
+  document.getElementById('log-touchpoint-form')!.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const summary = (document.getElementById('email-summary') as HTMLTextAreaElement).value;
+    const channel = channelSelect.value;
+    const notes = (document.getElementById('touchpoint-notes') as HTMLTextAreaElement).value;
+    const materialsRaw = (document.getElementById('touchpoint-materials') as HTMLInputElement).value;
+    const materials_shared = materialsRaw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const subject =
+      channel === 'email'
+        ? emailSubject || 'Email touchpoint'
+        : `${channel.replace(/_/g, ' ')} — ${new Date().toLocaleDateString()}`;
     await postInteraction({
-      channel: 'email',
-      subject: emailSubject || 'Email touchpoint',
-      summary,
-      raw_content: threadText,
+      channel,
+      subject,
+      summary: notes,
+      raw_content: channel === 'email' ? threadText : notes,
+      materials_shared: materials_shared.length ? materials_shared : undefined,
     });
   });
 }
 
 async function populateAiSummary(threadText: string) {
   const statusEl = document.getElementById('ai-summary-status')!;
-  const formEl = document.getElementById('log-email-form') as HTMLFormElement;
+  const notesEl = document.getElementById('touchpoint-notes') as HTMLTextAreaElement;
+  statusEl.textContent = 'Generating AI summary…';
   try {
     const res = await fetch(`${API_BASE_URL}/api/v1/ai/summarize-thread`, {
       method: 'POST',
@@ -160,57 +201,14 @@ async function populateAiSummary(threadText: string) {
     });
     if (!res.ok) throw new Error(`AI summary failed (${res.status})`);
     const data = await res.json();
-    (document.getElementById('email-summary') as HTMLTextAreaElement).value = data.summary ?? '';
+    notesEl.value = data.summary ?? '';
     document.getElementById('ai-action-item')!.textContent = data.suggested_action_item
       ? `Suggested action: ${data.suggested_action_item}`
       : '';
-    statusEl.style.display = 'none';
-    formEl.style.display = 'block';
+    statusEl.textContent = '';
   } catch {
     statusEl.textContent = 'AI summary unavailable — enter manually.';
-    formEl.style.display = 'block';
   }
-}
-
-function renderLogVisitPanel() {
-  const panel = document.getElementById('action-panel')!;
-  panel.innerHTML = `
-    <form id="log-visit-form">
-      <label>Channel
-        <select id="visit-channel">
-          <option value="in_person_visit">In-person visit</option>
-          <option value="fair_booth">Fair / booth</option>
-          <option value="virtual_meeting">Virtual meeting</option>
-          <option value="phone_call">Phone call</option>
-          <option value="email">Email</option>
-        </select>
-      </label>
-      <label>Discussion notes
-        <textarea id="visit-notes" rows="3" required></textarea>
-      </label>
-      <label>Materials shared (comma-separated)
-        <input type="text" id="visit-materials" />
-      </label>
-      <button type="submit">Save</button>
-    </form>
-  `;
-  document.getElementById('log-visit-form')!.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const channel = (document.getElementById('visit-channel') as HTMLSelectElement).value;
-    const notes = (document.getElementById('visit-notes') as HTMLTextAreaElement).value;
-    const materialsRaw = (document.getElementById('visit-materials') as HTMLInputElement).value;
-    const materials_shared = materialsRaw
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    await postInteraction({
-      channel,
-      subject: `${channel.replace(/_/g, ' ')} — ${new Date().toLocaleDateString()}`,
-      summary: notes,
-      raw_content: notes,
-      materials_shared: materials_shared.length ? materials_shared : undefined,
-    });
-  });
 }
 
 function renderFollowupPanel() {
@@ -335,7 +333,7 @@ async function lookupInstitution() {
   setStatus('Looking up institution…');
   try {
     const res = await fetch(
-      `${API_BASE_URL}/api/v1/institutions/lookup?domain=${encodeURIComponent(senderDomain)}`,
+      `${API_BASE_URL}/api/v1/institutions/lookup?domain=${encodeURIComponent(senderDomain)}&email=${encodeURIComponent(senderEmail)}`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     if (!res.ok) {
@@ -353,7 +351,7 @@ async function lookupInstitution() {
 function signIn() {
   setStatus('Signing in…');
   Office.context.ui.displayDialogAsync(
-    'https://localhost:3001/dialog.html',
+    'https://bridgerecruit-addin.vercel.app/dialog.html',
     { height: 60, width: 30, promptBeforeOpen: false },
     (asyncResult) => {
       if (asyncResult.status === Office.AsyncResultStatus.Failed) {
@@ -403,7 +401,7 @@ Office.onReady((info) => {
     return;
   }
 
-  const senderEmail = item.from.emailAddress;
+  senderEmail = item.from.emailAddress;
   senderDomain = senderEmail.split('@')[1] ?? '';
   emailSubject = item.subject ?? '';
 

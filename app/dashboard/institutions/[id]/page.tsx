@@ -85,6 +85,13 @@ export default function InstitutionDetailPage() {
   const [logSummary, setLogSummary] = useState('');
   const [logDate, setLogDate] = useState('');
   const [savingLog, setSavingLog] = useState(false);
+  const [addingContact, setAddingContact] = useState(false);
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactTitle, setContactTitle] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactIsPrimary, setContactIsPrimary] = useState(false);
+  const [savingContact, setSavingContact] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -187,6 +194,43 @@ export default function InstitutionDetailPage() {
     }
   }
 
+  function openAddContact() {
+    setContactName('');
+    setContactEmail('');
+    setContactTitle('');
+    setContactPhone('');
+    setContactIsPrimary(contacts.length === 0);
+    setAddingContact(true);
+  }
+
+  async function handleAddContact(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingContact(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/v1/contacts', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          institution_id: id,
+          name: contactName,
+          email: contactEmail,
+          title: contactTitle || null,
+          phone: contactPhone || null,
+          is_primary: contactIsPrimary,
+        }),
+      });
+      if (!res.ok) throw new Error(`Add contact failed (${res.status})`);
+      setAddingContact(false);
+      await load();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSavingContact(false);
+    }
+  }
+
   async function handleDelete() {
     setDeleting(true);
     setError(null);
@@ -229,7 +273,7 @@ export default function InstitutionDetailPage() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-semibold">{institution.name}</h1>
             <div className="flex items-center gap-3">
-              <span className={`rounded px-2 py-0.5 text-xs ${HEALTH_COLORS[institution.health_status] ?? ''}`}>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${HEALTH_COLORS[institution.health_status] ?? ''}`}>
                 {HEALTH_LABELS[institution.health_status] ?? institution.health_status}
               </span>
               {!editing && (
@@ -362,14 +406,14 @@ export default function InstitutionDetailPage() {
                 <button
                   onClick={() => setEditing(false)}
                   disabled={saving}
-                  className="rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+                  className="rounded-md bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                 >
                   {saving ? 'Saving…' : 'Save'}
                 </button>
@@ -377,7 +421,7 @@ export default function InstitutionDetailPage() {
             </div>
           ) : (
             <>
-              <div className="rounded border border-gray-200 dark:border-gray-700 p-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
                 <div><span className="text-gray-500 dark:text-gray-400">Location</span><br />{institution.city}, {institution.country}</div>
                 <div><span className="text-gray-500 dark:text-gray-400">Address</span><br />{institution.address ?? '—'}</div>
                 <div><span className="text-gray-500 dark:text-gray-400">Tier</span><br />{institution.tier.replace(/_/g, ' ')}</div>
@@ -389,7 +433,7 @@ export default function InstitutionDetailPage() {
               </div>
 
               {institution.notes && (
-                <div className="rounded border border-gray-200 dark:border-gray-700 p-4">
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                   <p className="text-sm font-medium mb-1">Notes</p>
                   <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300">{institution.notes}</p>
                 </div>
@@ -397,9 +441,89 @@ export default function InstitutionDetailPage() {
             </>
           )}
 
-          <div className="rounded border border-gray-200 dark:border-gray-700 p-4">
-            <p className="text-sm font-medium mb-2">Contacts</p>
-            {contacts.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">No contacts on file.</p>}
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium">Contacts</p>
+              {!addingContact && (
+                <button
+                  onClick={openAddContact}
+                  className="rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700"
+                >
+                  Add Contact
+                </button>
+              )}
+            </div>
+
+            {addingContact && (
+              <form
+                onSubmit={handleAddContact}
+                className="rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950 p-3 mb-3 flex flex-col gap-2 text-sm"
+              >
+                <div className="grid grid-cols-2 gap-2">
+                  <label>Name
+                    <input
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                      required
+                      className="w-full mt-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1"
+                    />
+                  </label>
+                  <label>Email
+                    <input
+                      type="email"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      required
+                      className="w-full mt-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1"
+                    />
+                  </label>
+                  <label>Title
+                    <input
+                      value={contactTitle}
+                      onChange={(e) => setContactTitle(e.target.value)}
+                      placeholder="e.g. Head of College Counseling"
+                      className="w-full mt-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1"
+                    />
+                  </label>
+                  <label>Phone
+                    <input
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      className="w-full mt-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1"
+                    />
+                  </label>
+                </div>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={contactIsPrimary}
+                    onChange={(e) => setContactIsPrimary(e.target.checked)}
+                  />
+                  Primary contact
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAddingContact(false)}
+                    disabled={savingContact}
+                    className="rounded-md bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingContact}
+                    className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {savingContact ? 'Saving…' : 'Save Contact'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {contacts.length === 0 && !addingContact && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">No contacts on file.</p>
+            )}
             <ul className="flex flex-col gap-2">
               {contacts.map((c) => (
                 <li key={c.id} className="text-sm">
@@ -413,7 +537,7 @@ export default function InstitutionDetailPage() {
             </ul>
           </div>
 
-          <div className="rounded border border-gray-200 dark:border-gray-700 p-4">
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium">Interaction history ({interactions.length})</p>
               {!loggingInteraction && (
@@ -496,14 +620,14 @@ export default function InstitutionDetailPage() {
                     type="button"
                     onClick={() => setLoggingInteraction(false)}
                     disabled={savingLog}
-                    className="rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+                    className="rounded-md bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={savingLog}
-                    className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                   >
                     {savingLog ? 'Saving…' : 'Save Interaction'}
                   </button>
@@ -524,7 +648,7 @@ export default function InstitutionDetailPage() {
             </ul>
           </div>
 
-          <div className="rounded border border-gray-200 dark:border-gray-700 p-4">
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <p className="text-sm font-medium mb-2">Follow-ups ({followups.length})</p>
             {followups.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">No follow-ups scheduled.</p>}
             <ul className="flex flex-col gap-2">

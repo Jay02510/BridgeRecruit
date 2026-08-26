@@ -8,7 +8,7 @@ export const msalConfig = {
   auth: {
     clientId: CLIENT_ID,
     authority: 'https://login.microsoftonline.com/common',
-    redirectUri: 'https://localhost:3001/dialog.html',
+    redirectUri: 'https://bridgerecruit-addin.vercel.app/dialog.html',
   },
   cache: {
     cacheLocation: 'sessionStorage' as const,

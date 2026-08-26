@@ -205,21 +205,21 @@ export default function ReportsPage() {
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded border border-gray-200 dark:border-gray-700 p-3">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
           <p className="text-xs text-gray-500 dark:text-gray-400">Total institutions</p>
-          <p className="text-xl font-semibold">{overview.total}</p>
+          <p className="text-2xl font-semibold tabular-nums mt-0.5">{overview.total}</p>
         </div>
-        <div className="rounded border border-gray-200 dark:border-gray-700 p-3">
+        <div className="rounded-lg border border-l-4 border-l-green-500 border-gray-200 dark:border-gray-700 p-3">
           <p className="text-xs text-gray-500 dark:text-gray-400">Active / Warm</p>
-          <p className="text-xl font-semibold text-green-700 dark:text-green-400">{overview.counts.active_warm}</p>
+          <p className="text-2xl font-semibold tabular-nums mt-0.5 text-green-700 dark:text-green-400">{overview.counts.active_warm}</p>
         </div>
-        <div className="rounded border border-gray-200 dark:border-gray-700 p-3">
+        <div className="rounded-lg border border-l-4 border-l-yellow-500 border-gray-200 dark:border-gray-700 p-3">
           <p className="text-xs text-gray-500 dark:text-gray-400">Cooling</p>
-          <p className="text-xl font-semibold text-yellow-700 dark:text-yellow-400">{overview.counts.cooling}</p>
+          <p className="text-2xl font-semibold tabular-nums mt-0.5 text-yellow-700 dark:text-yellow-400">{overview.counts.cooling}</p>
         </div>
-        <div className="rounded border border-gray-200 dark:border-gray-700 p-3">
+        <div className="rounded-lg border border-l-4 border-l-red-500 border-gray-200 dark:border-gray-700 p-3">
           <p className="text-xs text-gray-500 dark:text-gray-400">Stalled / Cold</p>
-          <p className="text-xl font-semibold text-red-700 dark:text-red-400">{overview.counts.stalled_cold}</p>
+          <p className="text-2xl font-semibold tabular-nums mt-0.5 text-red-700 dark:text-red-400">{overview.counts.stalled_cold}</p>
         </div>
       </div>
 
@@ -256,7 +256,7 @@ export default function ReportsPage() {
         <button
           onClick={generate}
           disabled={loading}
-          className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? 'Generating…' : 'Generate Report'}
         </button>
@@ -266,7 +266,7 @@ export default function ReportsPage() {
       {error && <p className="text-sm text-red-700 dark:text-red-400">{error}</p>}
 
       {report && (
-        <div className="rounded border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-500 dark:text-gray-400">{report.period_label}</p>
             <div className="flex gap-2">

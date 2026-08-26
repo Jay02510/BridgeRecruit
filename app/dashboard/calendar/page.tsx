@@ -117,7 +117,7 @@ export default function CalendarPage() {
       <div className="flex items-center gap-3">
         <button
           onClick={() => setWeekOffset((w) => w - 1)}
-          className="rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
+          className="rounded-md bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600"
         >
           ← Previous week
         </button>
@@ -126,7 +126,7 @@ export default function CalendarPage() {
         </span>
         <button
           onClick={() => setWeekOffset((w) => w + 1)}
-          className="rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
+          className="rounded-md bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600"
         >
           Next week →
         </button>
@@ -148,19 +148,26 @@ export default function CalendarPage() {
           const dayEvents = byDay.get(day.toDateString()) ?? [];
           const isToday = day.toDateString() === new Date().toDateString();
           return (
-            <div key={day.toISOString()} className="rounded border border-gray-200 dark:border-gray-700 p-2 min-h-[100px]">
-              <p className={`text-xs font-semibold mb-2 ${isToday ? 'text-blue-600' : 'text-gray-500 dark:text-gray-400'}`}>
+            <div
+              key={day.toISOString()}
+              className={`rounded-lg border p-2 min-h-[100px] ${
+                isToday
+                  ? 'border-blue-300 bg-blue-50/60 dark:border-blue-700 dark:bg-blue-950/40'
+                  : 'border-gray-200 dark:border-gray-700'
+              }`}
+            >
+              <p className={`text-xs font-semibold mb-2 ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
                 {day.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
               </p>
               <div className="flex flex-col gap-1.5">
                 {dayEvents.map((e) => (
-                  <div key={e.id} className="rounded bg-gray-100 dark:bg-gray-800 p-1.5 text-xs">
+                  <div key={e.id} className="rounded-md bg-gray-100 dark:bg-gray-800 p-1.5 text-xs">
                     <p className="font-medium">{e.subject}</p>
                     <p className="text-gray-500 dark:text-gray-400">
                       {new Date(e.start).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
                     </p>
                     {e.bridgeRecruit && (
-                      <p className="mt-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1 py-0.5 w-fit">
+                      <p className="mt-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 w-fit font-medium">
                         {e.bridgeRecruit.institutionName ?? 'BridgeRecruit follow-up'}
                       </p>
                     )}

@@ -19,6 +19,20 @@ export const institutionLookupQuerySchema = z.object({
 export type InstitutionLookupQuery = z.infer<typeof institutionLookupQuerySchema>;
 
 // ============================================================================
+// POST /api/v1/contacts
+// ============================================================================
+export const createContactSchema = z.object({
+  institution_id: uuid(),
+  name: z.string().min(1),
+  email: z.string().email(),
+  title: z.string().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  is_primary: z.boolean().optional().default(false),
+  preferences_notes: z.string().nullable().optional(),
+});
+export type CreateContactInput = z.infer<typeof createContactSchema>;
+
+// ============================================================================
 // POST /api/v1/interactions
 // ============================================================================
 export const createInteractionSchema = z.object({

@@ -7,17 +7,18 @@
   xsi:type="MailApp">
 
   <Id>6e2d443b-ff59-44cf-a3d4-a5e026fa3730</Id>
-  <Version>1.0.0.0</Version>
+  <Version>1.0.0.1</Version>
   <ProviderName>BridgeRecruit</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="BridgeRecruit" />
   <Description DefaultValue="Inbox-native admissions CRM context panel." />
-  <IconUrl DefaultValue="https://localhost:3001/assets/icon-32.png" />
-  <HighResolutionIconUrl DefaultValue="https://localhost:3001/assets/icon-80.png" />
-  <SupportUrl DefaultValue="https://localhost:3001" />
+  <IconUrl DefaultValue="https://bridgerecruit-addin.vercel.app/assets/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://bridgerecruit-addin.vercel.app/assets/icon-80.png" />
+  <SupportUrl DefaultValue="https://bridgerecruit-addin.vercel.app" />
 
   <AppDomains>
-    <AppDomain>https://localhost:3000</AppDomain>
+    <AppDomain>https://bridgerecruit-addin.vercel.app</AppDomain>
+    <AppDomain>https://bridgerecruit.vercel.app</AppDomain>
     <AppDomain>https://login.microsoftonline.com</AppDomain>
     <AppDomain>https://login.live.com</AppDomain>
     <AppDomain>https://account.live.com</AppDomain>
@@ -35,7 +36,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://localhost:3001/taskpane.html" />
+        <SourceLocation DefaultValue="https://bridgerecruit-addin.vercel.app/taskpane.html" />
         <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -86,13 +87,13 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="icon-16" DefaultValue="https://localhost:3001/assets/icon-16.png" />
-        <bt:Image id="icon-32" DefaultValue="https://localhost:3001/assets/icon-32.png" />
-        <bt:Image id="icon-80" DefaultValue="https://localhost:3001/assets/icon-80.png" />
+        <bt:Image id="icon-16" DefaultValue="https://bridgerecruit-addin.vercel.app/assets/icon-16.png" />
+        <bt:Image id="icon-32" DefaultValue="https://bridgerecruit-addin.vercel.app/assets/icon-32.png" />
+        <bt:Image id="icon-80" DefaultValue="https://bridgerecruit-addin.vercel.app/assets/icon-80.png" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="functionFile" DefaultValue="https://localhost:3001/taskpane.html" />
-        <bt:Url id="taskpaneUrl" DefaultValue="https://localhost:3001/taskpane.html" />
+        <bt:Url id="functionFile" DefaultValue="https://bridgerecruit-addin.vercel.app/taskpane.html" />
+        <bt:Url id="taskpaneUrl" DefaultValue="https://bridgerecruit-addin.vercel.app/taskpane.html" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="groupLabel" DefaultValue="BridgeRecruit" />

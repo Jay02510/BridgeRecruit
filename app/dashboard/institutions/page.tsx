@@ -85,6 +85,14 @@ export default function InstitutionsPage() {
   const [confirmingPurge, setConfirmingPurge] = useState(false);
   const [purgeConfirmText, setPurgeConfirmText] = useState('');
   const [purging, setPurging] = useState(false);
+  const [addingInstitution, setAddingInstitution] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newDomain, setNewDomain] = useState('');
+  const [newCity, setNewCity] = useState('');
+  const [newCountry, setNewCountry] = useState('South Korea');
+  const [newType, setNewType] = useState('international_high_school');
+  const [newTier, setNewTier] = useState('tier_2_high_potential');
+  const [savingNew, setSavingNew] = useState(false);
   const [filterOptions, setFilterOptions] = useState<{ countries: string[]; ownershipTypes: string[] }>({
     countries: [],
     ownershipTypes: [],
@@ -256,6 +264,44 @@ export default function InstitutionsPage() {
     }
   }
 
+  function openAddInstitution() {
+    setNewName('');
+    setNewDomain('');
+    setNewCity('');
+    setNewCountry('South Korea');
+    setNewType('international_high_school');
+    setNewTier('tier_2_high_potential');
+    setAddingInstitution(true);
+  }
+
+  async function handleAddInstitution(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingNew(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/v1/institutions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newName,
+          domain: newDomain,
+          city: newCity,
+          country: newCountry,
+          institution_type: newType,
+          tier: newTier,
+        }),
+      });
+      if (!res.ok) throw new Error(`Add institution failed (${res.status})`);
+      setAddingInstitution(false);
+      await load();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSavingNew(false);
+    }
+  }
+
   async function handleExport() {
     setError(null);
     try {
@@ -371,8 +417,19 @@ export default function InstitutionsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Institutions</h1>
       </div>
+      <p className="text-sm text-gray-600 dark:text-gray-400 -mt-2">
+        Every school and partner in your territory — search, filter, and click a row for its full
+        profile. Add one manually, import an existing spreadsheet, or export the current list as
+        CSV.
+      </p>
 
       <div className="flex items-center gap-3">
+        <button
+          onClick={openAddInstitution}
+          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          Add Institution
+        </button>
         <button
           onClick={handleExport}
           className="rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
@@ -416,6 +473,89 @@ export default function InstitutionsPage() {
           </div>
         )}
       </div>
+
+      {addingInstitution && (
+        <form
+          onSubmit={handleAddInstitution}
+          className="rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950 p-4 flex flex-col gap-3 text-sm"
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <label>Name
+              <input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                required
+                className="w-full mt-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1"
+              />
+            </label>
+            <label>Domain
+              <input
+                value={newDomain}
+                onChange={(e) => setNewDomain(e.target.value)}
+                required
+                placeholder="e.g. school.edu"
+                className="w-full mt-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1"
+              />
+            </label>
+            <label>City
+              <input
+                value={newCity}
+                onChange={(e) => setNewCity(e.target.value)}
+                required
+                className="w-full mt-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1"
+              />
+            </label>
+            <label>Country
+              <input
+                value={newCountry}
+                onChange={(e) => setNewCountry(e.target.value)}
+                required
+                className="w-full mt-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1"
+              />
+            </label>
+            <label>Type
+              <select
+                value={newType}
+                onChange={(e) => setNewType(e.target.value)}
+                className="w-full mt-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1"
+              >
+                <option value="international_high_school">International high school</option>
+                <option value="foreign_school">Foreign school</option>
+                <option value="local_high_school">Local high school</option>
+                <option value="university_partner">University partner</option>
+              </select>
+            </label>
+            <label>Tier
+              <select
+                value={newTier}
+                onChange={(e) => setNewTier(e.target.value)}
+                className="w-full mt-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1"
+              >
+                <option value="tier_1_feeder">Tier 1 — Feeder</option>
+                <option value="tier_2_high_potential">Tier 2 — High potential</option>
+                <option value="tier_3_standard">Tier 3 — Standard</option>
+              </select>
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setAddingInstitution(false)}
+              disabled={savingNew}
+              className="rounded-md bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={savingNew}
+              className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {savingNew ? 'Saving…' : 'Save Institution'}
+            </button>
+          </div>
+        </form>
+      )}
 
       {!confirmingPurge ? (
         <button
@@ -710,7 +850,7 @@ export default function InstitutionsPage() {
               <td className="py-2 pr-4">{inst.city}, {inst.country}</td>
               <td className="py-2 pr-4">{inst.tier.replace(/_/g, ' ')}</td>
               <td className="py-2 pr-4">
-                <span className={`rounded px-2 py-0.5 text-xs ${HEALTH_COLORS[inst.health_status] ?? ''}`}>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${HEALTH_COLORS[inst.health_status] ?? ''}`}>
                   {HEALTH_LABELS[inst.health_status] ?? inst.health_status}
                 </span>
               </td>

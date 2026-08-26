@@ -1,12 +1,46 @@
 'use client';
 
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useMsal, useIsAuthenticated } from '@azure/msal-react';
-import { apiLoginRequest, graphConsentRequest, calendarConsentRequest } from '@/lib/msal/config';
-import { DashboardNav } from '@/components/dashboard-nav';
+import { apiLoginRequest, graphConsentRequest } from '@/lib/msal/config';
+import { useApiToken } from '@/lib/hooks/useApiToken';
+
+type ProvisionState = 'checking' | 'needs-consent' | 'ready' | 'error';
 
 export default function Home() {
   const { instance, accounts } = useMsal();
   const isAuthenticated = useIsAuthenticated();
+  const getToken = useApiToken();
+  const router = useRouter();
+  const [provisionState, setProvisionState] = useState<ProvisionState>('checking');
+  const redirectAttempted = useRef(false);
+
+  // First-login provisioning: GET /me does the On-Behalf-Of Graph exchange
+  // and upserts the users row. Nothing called this before — granting Graph
+  // access only minted a token, so the account row was never actually
+  // created. Runs automatically once signed in; 502 means Graph consent
+  // hasn't been granted yet, so we fall back to showing that button. Once
+  // ready, this screen's only job is done — straight to Institutions.
+  const checkProvisioned = useCallback(async () => {
+    setProvisionState('checking');
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/v1/me', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        setProvisionState('ready');
+        router.replace('/dashboard/institutions');
+      } else {
+        setProvisionState('needs-consent');
+      }
+    } catch {
+      setProvisionState('error');
+    }
+  }, [getToken, router]);
+
+  useEffect(() => {
+    if (isAuthenticated) checkProvisioned();
+  }, [isAuthenticated, checkProvisioned]);
 
   async function handleLogin() {
     // Redirect flow instead of popup: more reliable across browsers (some,
@@ -16,6 +50,19 @@ export default function Home() {
     await instance.loginRedirect(apiLoginRequest);
   }
 
+  // Signed into Outlook already doesn't carry over to the browser — a
+  // separate origin, separate session. Rather than make you click a button
+  // just to trigger the same redirect, fire it automatically; if you're
+  // already signed into Microsoft in this browser, their side skips
+  // straight to consent/redirect without asking for credentials again.
+  useEffect(() => {
+    if (!isAuthenticated && !redirectAttempted.current) {
+      redirectAttempted.current = true;
+      handleLogin();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
+
   async function handleGrantGraphAccess() {
     // Incremental consent: separate single-resource request for the Graph
     // scope, reusing the existing signed-in session (account passed in) so
@@ -23,59 +70,56 @@ export default function Home() {
     await instance.acquireTokenRedirect({ ...graphConsentRequest, account: accounts[0] });
   }
 
-  async function handleGrantCalendarAccess() {
-    await instance.acquireTokenRedirect({ ...calendarConsentRequest, account: accounts[0] });
-  }
-
   if (!isAuthenticated) {
     return (
       <main className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
         <div className="flex flex-col items-center gap-2 text-center">
           <h1 className="text-3xl font-semibold">BridgeRecruit</h1>
-          <p className="text-gray-600 dark:text-gray-400 max-w-md">
-            Inbox-native CRM for school partnership recruiting. Sign in with your Microsoft
-            account to see institution health, log touchpoints, and manage follow-ups.
-          </p>
+          <p className="text-gray-600 dark:text-gray-400 max-w-md">Redirecting to Microsoft sign-in…</p>
         </div>
         <button
           onClick={handleLogin}
-          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
-          Sign in with Microsoft
+          Continue with Microsoft
         </button>
       </main>
     );
   }
 
   return (
-    <main className="flex-1 flex flex-col gap-6 p-8 max-w-3xl mx-auto w-full">
-      <DashboardNav />
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Signed in as {accounts[0]?.username}
-      </p>
+    <main className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
+      <div className="flex flex-col items-center text-center gap-4 w-full max-w-md">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Signed in as {accounts[0]?.username}
+        </p>
 
-      <div className="rounded border border-gray-200 dark:border-gray-700 p-4 flex flex-col gap-3">
-        <div>
-          <p className="font-medium text-sm">Microsoft Graph access</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            One-time setup: grant access so the add-in can read email context and sync follow-ups
-            to your Outlook Calendar.
+        {provisionState === 'checking' && (
+          <p className="text-sm text-gray-500 dark:text-gray-400">Setting up your account…</p>
+        )}
+
+        {provisionState === 'error' && (
+          <p className="text-sm text-red-700 dark:text-red-400">
+            Couldn&apos;t reach the server to finish setup. Try refreshing.
           </p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={handleGrantGraphAccess}
-            className="rounded bg-purple-600 px-3 py-1.5 text-sm text-white hover:bg-purple-700"
-          >
-            Grant Graph Access
-          </button>
-          <button
-            onClick={handleGrantCalendarAccess}
-            className="rounded bg-indigo-600 px-3 py-1.5 text-sm text-white hover:bg-indigo-700"
-          >
-            Grant Calendar Access
-          </button>
-        </div>
+        )}
+
+        {provisionState === 'needs-consent' && (
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 flex flex-col items-center gap-3 w-full">
+            <div>
+              <p className="font-medium text-sm">One-time permission needed</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Required so BridgeRecruit can create your account and read basic profile info.
+              </p>
+            </div>
+            <button
+              onClick={handleGrantGraphAccess}
+              className="rounded-md bg-purple-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-purple-700"
+            >
+              Grant Graph Access
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );

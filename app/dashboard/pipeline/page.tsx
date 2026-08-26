@@ -36,7 +36,7 @@ function Card({ inst }: { inst: Institution }) {
       style={style}
       {...listeners}
       {...attributes}
-      className={`rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-2 text-xs cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
+      className={`rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-2 text-xs shadow-sm cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md ${isDragging ? 'opacity-50 shadow-lg' : ''}`}
     >
       <p className="font-medium">{inst.name}</p>
       <p className="text-gray-500 dark:text-gray-400">
@@ -64,9 +64,9 @@ function Column({
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 min-w-[200px] rounded border border-gray-200 dark:border-gray-700 p-2 ${isOver ? 'bg-blue-50 dark:bg-blue-950' : ''}`}
+      className={`flex-1 min-w-[200px] rounded-lg border p-2 transition-colors ${isOver ? 'border-blue-400 bg-blue-50 dark:border-blue-600 dark:bg-blue-950' : 'border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/40'}`}
     >
-      <div className={`rounded px-2 py-1 mb-2 flex items-center gap-1.5 text-sm font-semibold ${badge}`}>
+      <div className={`rounded-md px-2 py-1 mb-2 flex items-center gap-1.5 text-sm font-semibold ${badge}`}>
         <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
         {label} <span className="font-normal opacity-70">({institutions.length})</span>
       </div>
@@ -172,7 +172,7 @@ export default function PipelinePage() {
         <h1 className="text-2xl font-semibold">Recruitment Pipeline</h1>
         <button
           onClick={handleExport}
-          className="rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
+          className="rounded-md bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600"
         >
           Export Snapshot (CSV)
         </button>

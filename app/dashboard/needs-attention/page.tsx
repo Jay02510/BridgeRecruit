@@ -115,19 +115,21 @@ export default function NeedsAttentionPage() {
           const draft = drafts[inst.id];
           const draftError = draftErrors[inst.id];
           return (
-            <div key={inst.id} className="rounded border border-gray-200 dark:border-gray-700 p-4">
-              <div className="flex items-center justify-between">
+            <div key={inst.id} className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 transition-shadow hover:shadow-sm">
+              <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="font-medium">{inst.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                     {inst.city}, {inst.country} · {inst.tier.replace(/_/g, ' ')} ·{' '}
-                    {daysSince(inst.last_interaction_at) ?? '?'} days inactive
+                    <span className="font-medium text-red-700 dark:text-red-400">
+                      {daysSince(inst.last_interaction_at) ?? '?'} days inactive
+                    </span>
                   </p>
                 </div>
                 <button
                   onClick={() => draftReengagement(inst.id)}
                   disabled={drafting === inst.id}
-                  className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="shrink-0 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                 >
                   {drafting === inst.id ? 'Drafting…' : draft ? 'Regenerate Draft' : 'Draft Re-engagement'}
                 </button>
@@ -136,12 +138,12 @@ export default function NeedsAttentionPage() {
               {draftError && <p className="mt-2 text-sm text-red-700 dark:text-red-400">{draftError}</p>}
 
               {draft && (
-                <div className="mt-3 rounded bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-3 text-sm">
+                <div className="mt-3 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-3 text-sm">
                   <p className="font-semibold">{draft.subject_line}</p>
                   <p className="mt-2 whitespace-pre-wrap">{draft.email_body}</p>
                   <button
                     onClick={() => copyDraft(inst.id, draft)}
-                    className="mt-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-xs hover:bg-gray-300 dark:hover:bg-gray-600"
+                    className="mt-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-xs font-medium hover:bg-gray-300 dark:hover:bg-gray-600"
                   >
                     {copied === inst.id ? 'Copied!' : 'Copy to clipboard'}
                   </button>
